@@ -40,6 +40,10 @@ body {
     var(--sky);
 }
 
+body[data-app-mode="landing"] {
+  background: #5cb0dc;
+}
+
 .feather-canvas {
   position: fixed;
   inset: 0;
@@ -55,6 +59,68 @@ body {
   padding: 30px 0 40px;
   position: relative;
   z-index: 1;
+}
+
+.landing-shell {
+  min-height: 100vh;
+  padding: 0;
+}
+
+.landing-hero {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: url("../Assets/YFNED_staffHUB_background.png") center center / cover no-repeat;
+}
+
+.landing-map {
+  position: relative;
+  min-height: 100vh;
+}
+
+.landing-node {
+  position: absolute;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.landing-node:hover,
+.landing-node:focus-visible {
+  transform: translateY(-4px) scale(1.02);
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.24));
+}
+
+.landing-node:focus-visible {
+  outline: 3px solid rgba(255, 227, 109, 0.92);
+  outline-offset: 6px;
+}
+
+.landing-node img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.landing-node-travel {
+  left: 8.5%;
+  bottom: 31%;
+  width: clamp(124px, 16vw, 178px);
+}
+
+.landing-node-calendar {
+  left: 42%;
+  bottom: 31%;
+  width: clamp(124px, 16vw, 178px);
+}
+
+.landing-node-fleet {
+  left: 76%;
+  bottom: 31%;
+  width: clamp(158px, 20vw, 228px);
 }
 
 .hero {
@@ -808,6 +874,37 @@ body[data-app-mode="travel"] .fc .fc-daygrid-event .fc-event-main {
 }
 
 @media (max-width: 760px) {
+  .landing-shell {
+    padding: 0;
+  }
+
+  .landing-hero {
+    min-height: 100vh;
+    background-position: 60% center;
+  }
+
+  .landing-map {
+    min-height: 100vh;
+  }
+
+  .landing-node-travel {
+    left: 7%;
+    bottom: 24%;
+    width: 118px;
+  }
+
+  .landing-node-calendar {
+    left: 40%;
+    bottom: 24%;
+    width: 118px;
+  }
+
+  .landing-node-fleet {
+    left: 72%;
+    bottom: 24%;
+    width: 144px;
+  }
+
   .page-shell {
     width: min(100% - 16px, 100%);
     padding-top: 16px;
