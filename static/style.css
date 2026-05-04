@@ -1,0 +1,857 @@
+:root {
+  --midnight: #003a70;
+  --sky: #0b8bcc;
+  --turquoise: #5dbcb2;
+  --pear: #cbdb2c;
+  --rose: #e6acce;
+  --strawberry: #cf2428;
+  --salmon: #e6544e;
+  --aqua: #aadbdd;
+  --blueberry: #497d9d;
+  --apricot: #ec927c;
+  --stone: #ebeee7;
+  --paper: #fcfcfa;
+  --ink: #2a2630;
+  --muted: #5d6271;
+  --line: rgba(0, 58, 112, 0.22);
+  --soft-line: rgba(0, 58, 112, 0.1);
+  --shadow: 0 24px 60px rgba(0, 58, 112, 0.08);
+  --display-font: "Prelo", "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --body-font: Calibri, "Aptos", "Segoe UI", Arial, sans-serif;
+  --decorative-font: "Editor's Hand", "Segoe Print", "Bradley Hand", cursive;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--sky);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--body-font);
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, rgba(11, 139, 204, 0.22), rgba(11, 139, 204, 0.12)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0.08) 1px, transparent 1px, transparent 280px),
+    var(--sky);
+}
+
+.feather-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page-shell {
+  width: min(1760px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 30px 0 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero {
+  display: grid;
+  gap: 12px;
+  padding: 24px 28px 22px;
+  background: rgba(255, 255, 255, 0.94);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 12px 28px rgba(0, 58, 112, 0.08);
+}
+
+.hero-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hero-bottom {
+  width: 100%;
+}
+
+.hero-logo-wrap {
+  flex: 0 0 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px 4px 0;
+  margin-top: -4px;
+}
+
+.hero-logo {
+  display: block;
+  width: 150px;
+  height: auto;
+}
+
+.hero-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 0;
+}
+
+.eyebrow,
+.sidebar-label {
+  margin: 0 0 12px;
+  color: var(--salmon);
+  font-size: 0.84rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 0;
+  max-width: none;
+  color: var(--salmon);
+  font-family: var(--display-font);
+  font-size: clamp(2.3rem, 3.3vw, 3.8rem);
+  font-weight: 300;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+}
+
+.page-switch-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  padding: 10px 16px;
+  border: 1px solid var(--midnight);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--midnight);
+  font-size: 0.94rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.page-switch-link:hover {
+  transform: translateY(-1px);
+  background: var(--midnight);
+  color: #fff;
+}
+
+.hero-text {
+  width: min(58ch, 100%);
+  margin: 0;
+  color: var(--midnight);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.hero-note {
+  margin: 8px 0 0;
+  color: var(--midnight);
+  font-family: var(--decorative-font);
+  font-size: 0.88rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 430px minmax(0, 1fr);
+  gap: 36px;
+  margin-top: 28px;
+}
+
+.controls-card,
+.calendar-card,
+.day-panel {
+  background: rgba(255, 255, 255, 0.91);
+  border: 1px solid var(--soft-line);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.controls-card {
+  padding: 22px 22px 28px;
+  border-left: 3px solid var(--midnight);
+}
+
+.card-header h2 {
+  margin: 0;
+  color: var(--salmon);
+  font-family: var(--display-font);
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1.05;
+}
+
+.card-header p {
+  margin: 12px 0 0;
+  color: var(--midnight);
+  line-height: 1.45;
+}
+
+.toggle-pill {
+  border: 1px solid rgba(0, 58, 112, 0.14);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--midnight);
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.toggle-pill:hover,
+.primary-action:hover,
+.secondary-action:hover {
+  transform: translateY(-1px);
+}
+
+.divider {
+  height: 1px;
+  margin: 220px 0 32px;
+  background: var(--line);
+}
+
+.toggle-list {
+  display: block;
+  margin-top: 22px;
+}
+
+.chip-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: 0 0 14px;
+}
+
+.flower-nav {
+  display: grid;
+  gap: 30px;
+}
+
+.flower-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 401 / 596;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+/* Locked baseline flower layout approved by user on 2026-04-24.
+   Future sidebar/navigation work should be matched to this exact resting composition. */
+
+.flower-subpetal-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.flower-subpetal-layer.is-behind-main-petals {
+  z-index: 1;
+}
+
+.flower-subpetal-layer.is-above-stem {
+  z-index: 2;
+}
+
+.flower-button {
+  position: absolute;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+}
+
+.flower-button:hover,
+.flower-button.is-active,
+.flower-button.is-focused {
+  transform: scale(1.03);
+}
+
+.flower-button img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.flower-image-hover {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.flower-button:hover .flower-image-hover,
+.flower-button.is-focused .flower-image-hover {
+  opacity: 1;
+}
+
+.flower-button:hover .flower-image-base,
+.flower-button.is-focused .flower-image-base {
+  opacity: 0;
+}
+
+.flower-center-button {
+  left: 50%;
+  top: 32.8%;
+  width: 31%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+}
+
+.flower-center-button:hover,
+.flower-center-button.is-active {
+  transform: translate(-50%, -50%) scale(1.04);
+}
+
+.flower-petal-advocates {
+  left: 50%;
+  top: 2.8%;
+  width: 42%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.flower-petal-early-years {
+  right: 4%;
+  top: 13.6%;
+  width: 41%;
+  z-index: 2;
+}
+
+.flower-petal-nutrition {
+  right: 8%;
+  top: calc(35.5% - 5px);
+  width: 41%;
+  z-index: 2;
+}
+
+.flower-petal-mtu {
+  left: calc(8% + 10px);
+  top: calc(35.5% - 5px);
+  width: 41%;
+  z-index: 4;
+}
+
+.flower-petal-analysts {
+  left: 3%;
+  top: 14%;
+  width: 42%;
+  z-index: 2;
+}
+
+.flower-stem-corporate {
+  left: calc(50% - 2.5px);
+  top: calc(45.5% + 35px);
+  width: 24.2%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.flower-petal-advocates:hover,
+.flower-petal-advocates.is-active,
+.flower-petal-advocates.is-focused {
+  transform: translateX(-50%) scale(1.03);
+}
+
+.flower-petal-early-years:hover,
+.flower-petal-early-years.is-active,
+.flower-petal-early-years.is-focused {
+  transform: scale(1.03);
+}
+
+.flower-petal-nutrition:hover,
+.flower-petal-nutrition.is-active,
+.flower-petal-nutrition.is-focused {
+  transform: scale(1.03);
+}
+
+.flower-petal-mtu:hover,
+.flower-petal-mtu.is-active,
+.flower-petal-mtu.is-focused {
+  transform: scale(1.03);
+}
+
+.flower-petal-analysts:hover,
+.flower-petal-analysts.is-active,
+.flower-petal-analysts.is-focused {
+  transform: scale(1.03);
+}
+
+.flower-stem-corporate:hover,
+.flower-stem-corporate.is-active,
+.flower-stem-corporate.is-focused {
+  transform: translateX(-50%) scale(1.03);
+}
+
+.flower-subpetal {
+  position: absolute;
+  left: var(--sub-left);
+  top: var(--sub-top);
+  width: var(--sub-width);
+  transform: rotate(var(--sub-rotate));
+  transform-origin: center center;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.18s ease, filter 0.18s ease, opacity 0.18s ease;
+}
+
+.flower-subpetal:hover,
+.flower-subpetal.is-selected {
+  transform: rotate(var(--sub-rotate)) scale(1.03);
+}
+
+.flower-subpetal img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.flower-subpetal .flower-image-selected,
+.flower-subpetal .flower-image-hover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: auto;
+  opacity: 0;
+}
+
+.flower-subpetal.is-selected .flower-image-selected {
+  opacity: 1;
+}
+
+.flower-subpetal.is-selected .flower-image-base {
+  opacity: 0;
+}
+
+.flower-subpetal:hover .flower-image-hover,
+.flower-subpetal.is-focused .flower-image-hover {
+  opacity: 1;
+}
+
+.flower-subpetal:hover .flower-image-base,
+.flower-subpetal.is-focused .flower-image-base {
+  opacity: 0;
+}
+
+.flower-subpetal.is-expanded-text-state:hover .flower-image-base,
+.flower-subpetal.is-expanded-text-state.is-focused .flower-image-base {
+  opacity: 1;
+}
+
+.flower-subpetal.is-selected:hover .flower-image-hover,
+.flower-subpetal.is-selected.is-focused .flower-image-hover {
+  opacity: 0;
+}
+
+.flower-subpetal.is-back-petal:hover .flower-image-base,
+.flower-subpetal.is-back-petal.is-focused .flower-image-base {
+  opacity: 1;
+}
+
+.flower-subpetal.is-selected.is-back-petal:hover .flower-image-base,
+.flower-subpetal.is-selected.is-back-petal.is-focused .flower-image-base {
+  opacity: 0;
+}
+
+.flower-subpetal.is-text span {
+  display: block;
+  padding: 18px 14px;
+  background: color-mix(in srgb, var(--subdepartment-color) 18%, white);
+  border: 1px solid color-mix(in srgb, var(--subdepartment-color) 42%, white);
+  color: var(--midnight);
+  font-weight: 700;
+  text-align: center;
+}
+
+.flower-subpetal.is-selected {
+  filter: drop-shadow(0 8px 10px rgba(0, 58, 112, 0.12));
+}
+
+.flower-state-inputs {
+  display: none;
+}
+
+.editor-panel {
+  margin-top: 0;
+}
+
+.event-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.event-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--midnight);
+  font-size: 0.96rem;
+}
+
+.event-series-fieldset {
+  margin: 0;
+  padding: 14px 14px 16px;
+  border: 1px solid rgba(0, 58, 112, 0.18);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.event-series-fieldset legend {
+  padding: 0 6px;
+  color: var(--midnight);
+  font-size: 0.96rem;
+}
+
+.event-series-help {
+  margin: 0 0 12px;
+  color: rgba(0, 58, 112, 0.8);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.weekday-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.weekday-chip {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.weekday-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.weekday-chip span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 58, 112, 0.18);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--midnight);
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.weekday-chip input:checked + span {
+  border-color: var(--midnight);
+  background: var(--midnight);
+  color: #fff;
+}
+
+.weekday-chip:hover span {
+  transform: translateY(-1px);
+}
+
+.event-form input,
+.event-form select,
+.event-form textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid rgba(0, 58, 112, 0.18);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+  font: inherit;
+}
+
+.primary-action,
+.secondary-action {
+  border: 1px solid transparent;
+  border-radius: 0;
+  cursor: pointer;
+  font: inherit;
+  transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.primary-action {
+  padding: 12px 16px;
+  background: var(--midnight);
+  color: #fff;
+}
+
+.secondary-action {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: var(--midnight);
+}
+
+.data-status {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--soft-line);
+  border-left: 4px solid var(--midnight);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--midnight);
+  font-size: 0.94rem;
+}
+
+.data-status[data-tone="success"] {
+  border-left-color: var(--turquoise);
+  background: rgba(93, 188, 178, 0.12);
+}
+
+.data-status[data-tone="warning"] {
+  border-left-color: var(--pear);
+  background: rgba(203, 219, 44, 0.14);
+}
+
+.data-status[data-tone="error"] {
+  border-left-color: var(--strawberry);
+  background: rgba(207, 36, 40, 0.1);
+}
+
+.calendar-panel {
+  min-width: 0;
+}
+
+.calendar-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.toolbar-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.toolbar-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 58, 112, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--midnight);
+  font-size: 0.94rem;
+}
+
+.calendar-and-sidebar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) 320px;
+  gap: 24px;
+}
+
+.calendar-card {
+  padding: 22px;
+}
+
+.day-panel {
+  padding: 24px;
+  align-self: start;
+  position: sticky;
+  top: 16px;
+  border-top: 4px solid var(--salmon);
+}
+
+#selected-day-heading {
+  margin: 0;
+  color: var(--midnight);
+  font-family: var(--display-font);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.08;
+}
+
+.selected-day-subtitle {
+  margin: 12px 0 18px;
+  color: var(--muted);
+}
+
+.selected-day-events {
+  display: grid;
+  gap: 12px;
+}
+
+.day-event-card {
+  padding: 16px;
+  border-radius: 0;
+  color: #fff;
+  box-shadow: none;
+}
+
+.day-event-card h3 {
+  margin: 0 0 8px;
+  font-family: var(--display-font);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.day-event-card p {
+  margin: 6px 0;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 18px 16px;
+  border: 1px dashed rgba(0, 58, 112, 0.2);
+  background: rgba(235, 238, 231, 0.5);
+  color: var(--midnight);
+}
+
+.fc {
+  --fc-border-color: rgba(0, 58, 112, 0.14);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: rgba(255, 255, 255, 0.7);
+  --fc-today-bg-color: rgba(170, 219, 221, 0.32);
+  --fc-button-bg-color: var(--midnight);
+  --fc-button-border-color: var(--midnight);
+  --fc-button-hover-bg-color: #08294b;
+  --fc-button-hover-border-color: #08294b;
+  --fc-button-active-bg-color: var(--strawberry);
+  --fc-button-active-border-color: var(--strawberry);
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 1.2rem;
+}
+
+.fc .fc-toolbar-title {
+  color: var(--midnight);
+  font-family: var(--display-font);
+  font-size: 2.5rem;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+.fc .fc-button {
+  border-radius: 0;
+  text-transform: lowercase;
+  font-family: var(--body-font);
+  font-weight: 700;
+}
+
+.fc .fc-col-header-cell {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.fc .fc-col-header-cell-cushion {
+  padding: 12px 4px;
+  color: var(--salmon);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.fc .fc-daygrid-day-number {
+  color: var(--midnight);
+  font-weight: 700;
+  padding: 10px;
+  font-size: 1.05rem;
+}
+
+.fc .fc-daygrid-day-frame {
+  min-height: 178px;
+}
+
+.fc .fc-daygrid-event {
+  border: none;
+  border-radius: 0;
+  padding: 1px .5%;
+}
+
+.fc .fc-daygrid-event .fc-event-main {
+  text-align: left;
+}
+
+body[data-app-mode="travel"] .fc .fc-daygrid-event .fc-event-main {
+  text-align: center;
+}
+
+.fc .fc-event-title {
+  font-family: var(--body-font);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.fc-day-selected {
+  background: rgba(230, 172, 206, 0.22) !important;
+}
+
+@media (max-width: 1180px) {
+  .hero h1 {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .layout,
+  .calendar-and-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .day-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-shell {
+    width: min(100% - 16px, 100%);
+    padding-top: 16px;
+  }
+
+  .hero {
+    gap: 18px;
+  }
+
+  .hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .hero-logo-wrap {
+    margin-top: 0;
+    padding-right: 0;
+  }
+
+  .hero-logo {
+    width: min(160px, 42vw);
+  }
+
+  .flower-stage {
+    max-width: 320px;
+  }
+
+  .calendar-toolbar {
+    flex-direction: column;
+  }
+
+  .toolbar-chip-row {
+    justify-content: flex-start;
+  }
+
+  .fc .fc-toolbar {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 899px), (prefers-reduced-motion: reduce) {
+  .feather-canvas {
+    display: none;
+  }
+}

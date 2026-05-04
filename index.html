@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YFNED Company Calendar</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/main.min.css">
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+  <canvas id="feather-canvas" class="feather-canvas" aria-hidden="true"></canvas>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-top">
+        <div class="hero-logo-wrap">
+          <img class="hero-logo" src="Assets/AllDepartmentCalendarLogo.png" alt="YFNED logo">
+        </div>
+        <div class="hero-copy">
+          <p class="eyebrow">Yukon First Nation Education Directorate</p>
+          <h1 id="calendar-title">YFNED ALL DEPARTMENTS CALENDAR</h1>
+          <a class="page-switch-link" href="travel.html">Switch To Travel Calendar</a>
+        </div>
+      </div>
+      <div class="hero-bottom">
+        <p class="hero-text">
+          Overlay department calendars, switch to a single department view, and inspect the full event list for any selected day.
+        </p>
+        <p class="hero-note">Built for shared planning, clear visibility, and community-wide coordination.</p>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="controls-card" aria-labelledby="view-controls-title">
+        <div class="card-header">
+          <h2 id="view-controls-title">Calendar Views</h2>
+          <p>Turn department calendars on or off, or select all departments at once.</p>
+        </div>
+
+        <div class="toggle-list" id="department-toggles" aria-label="Calendar views"></div>
+
+        <div class="divider"></div>
+
+        <section class="editor-panel" aria-labelledby="event-editor-title">
+          <div class="card-header">
+            <h2 id="event-editor-title">Event Editor</h2>
+            <p>Add department events and store them in Firebase Realtime Database.</p>
+          </div>
+
+          <form id="event-form" class="event-form">
+            <label>
+              Department
+              <select id="event-department" required></select>
+            </label>
+            <label>
+              Sub-department
+              <select id="event-subdepartment"></select>
+            </label>
+            <label>
+              Event Title
+              <input id="event-title" type="text" maxlength="120" required>
+            </label>
+            <label>
+              Start Date
+              <input id="event-start" type="date" required>
+            </label>
+            <label>
+              End Date
+              <input id="event-end" type="date" required>
+            </label>
+            <fieldset class="event-series-fieldset" id="event-series-fieldset">
+              <legend>Repeat On Specific Weekdays</legend>
+              <p class="event-series-help">
+                Optional: choose weekdays inside the start and end range. Matching dates will be saved as one linked series, and consecutive dates will be merged into one event span.
+              </p>
+              <div class="weekday-picker" id="weekday-picker">
+                <label class="weekday-chip">
+                  <input type="checkbox" value="0">
+                  <span>Sun</span>
+                </label>
+                <label class="weekday-chip">
+                  <input type="checkbox" value="1">
+                  <span>Mon</span>
+                </label>
+                <label class="weekday-chip">
+                  <input type="checkbox" value="2">
+                  <span>Tue</span>
+                </label>
+                <label class="weekday-chip">
+                  <input type="checkbox" value="3">
+                  <span>Wed</span>
+                </label>
+                <label class="weekday-chip">
+                  <input type="checkbox" value="4">
+                  <span>Thu</span>
+                </label>
+                <label class="weekday-chip">
+                  <input type="checkbox" value="5">
+                  <span>Fri</span>
+                </label>
+                <label class="weekday-chip">
+                  <input type="checkbox" value="6">
+                  <span>Sat</span>
+                </label>
+              </div>
+            </fieldset>
+            <label>
+              Description
+              <textarea id="event-description" rows="4" maxlength="400" required></textarea>
+            </label>
+            <button type="submit" class="primary-action">Save Event</button>
+          </form>
+          <p id="data-status" class="data-status">Checking Firebase configuration.</p>
+        </section>
+      </section>
+
+      <section class="calendar-panel">
+        <div class="calendar-toolbar">
+          <div class="toolbar-chip-row" id="active-chips"></div>
+        </div>
+
+        <div class="calendar-and-sidebar">
+          <div class="calendar-card">
+            <div id="calendar"></div>
+          </div>
+
+          <aside class="day-panel" aria-labelledby="selected-day-heading">
+            <p class="sidebar-label">Selected Day</p>
+            <h2 id="selected-day-heading">Choose a date</h2>
+            <p id="selected-day-subtitle" class="selected-day-subtitle">Events that overlap the selected date will appear here.</p>
+            <div id="selected-day-events" class="selected-day-events">
+              <p class="empty-state">Click any date on the calendar to view events.</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+  <script src="static/firebase-config.js"></script>
+  <script type="module" src="static/app.js"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById("feather-canvas");
+      if (!canvas) return;
+
+      const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      if (reducedMotionQuery.matches || window.innerWidth < 900) {
+        return;
+      }
+
+      const featherSourceMap = {
+        all: "Assets/Feather_AD.png",
+        "Corporate Services": "Assets/Feather_CS.png",
+        "Education Advocates": "Assets/Feather_EdAd.png",
+        "Education Analysts": "Assets/Feather_EdAn.png",
+        "Early Years": "Assets/Feather_EY.png",
+        "Mobile Therapeutic Unit": "Assets/Feather_MTU.png",
+        "Nutrition": "Assets/Feather_N.png"
+      };
+
+      const context = canvas.getContext("2d");
+      const featherImages = new Map();
+      const togglesHost = document.getElementById("department-toggles");
+      const spawnSwitchDelayMs = 4000;
+      let width = 0;
+      let height = 0;
+      let dpr = 1;
+      let animationFrameId = null;
+      let lastFrameTime = 0;
+      let lastSpawnTime = 0;
+      let feathers = [];
+      let currentSpawnSources = [];
+      let pendingSpawnSources = [];
+      let switchSpawnSourcesAt = 0;
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function randomBetween(min, max) {
+        return min + Math.random() * (max - min);
+      }
+
+      function pickRandom(items) {
+        return items[Math.floor(Math.random() * items.length)];
+      }
+
+      function parseSize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        dpr = clamp(window.devicePixelRatio || 1, 1, 2);
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function getActiveFeatherSources() {
+        const allToggle = togglesHost?.querySelector('input[data-role="all"]');
+        if (allToggle?.checked) {
+          return [featherSourceMap.all];
+        }
+
+        const departmentSources = Array.from(
+          togglesHost?.querySelectorAll('input[data-role="department"]:checked') || []
+        )
+          .map((input) => featherSourceMap[input.dataset.department])
+          .filter(Boolean);
+
+        return departmentSources;
+      }
+
+      function getActiveFeatherImages() {
+        return currentSpawnSources
+          .map((source) => featherImages.get(source))
+          .filter(Boolean);
+      }
+
+      function createFeather(spawnAboveViewport) {
+        const activeImages = getActiveFeatherImages();
+        const imagePool = activeImages.length ? activeImages : Array.from(featherImages.values());
+        const image = pickRandom(imagePool);
+        const scale = randomBetween(0.26, 0.54);
+        const drawWidth = image.width * scale;
+        const drawHeight = image.height * scale;
+
+        return {
+          image,
+          x: randomBetween(-width * 0.08, width * 1.08),
+          y: spawnAboveViewport
+            ? randomBetween(-height * 0.35, -drawHeight - 18)
+            : randomBetween(-height * 0.1, height * 1.02),
+          width: drawWidth,
+          height: drawHeight,
+          source: image.dataset.source || "",
+          fallSpeed: randomBetween(12, 26),
+          drift: randomBetween(-7, 7),
+          swayAmplitude: randomBetween(8, 26),
+          swayFrequency: randomBetween(0.35, 1.05),
+          swayPhase: randomBetween(0, Math.PI * 2),
+          rotation: randomBetween(-1.2, 1.2),
+          rotationSpeed: randomBetween(-0.12, 0.12),
+          wobbleAmplitude: randomBetween(0.015, 0.05)
+        };
+      }
+
+      function drawFeather(feather) {
+        context.save();
+        context.globalAlpha = 1;
+
+        const sway = Math.sin(feather.swayPhase) * feather.swayAmplitude;
+        const wobble = Math.sin(feather.swayPhase * 0.8) * feather.wobbleAmplitude;
+        const drawX = feather.x + sway;
+        const drawY = feather.y;
+        const centerX = drawX + feather.width / 2;
+        const centerY = drawY + feather.height / 2;
+
+        context.translate(centerX, centerY);
+        context.rotate(feather.rotation + wobble);
+        context.drawImage(
+          feather.image,
+          -feather.width / 2,
+          -feather.height / 2,
+          feather.width,
+          feather.height
+        );
+        context.restore();
+      }
+
+      function updateFeather(feather, deltaSeconds) {
+        feather.y += feather.fallSpeed * deltaSeconds;
+        feather.x += feather.drift * deltaSeconds;
+        feather.swayPhase += feather.swayFrequency * deltaSeconds;
+        feather.rotation += feather.rotationSpeed * deltaSeconds;
+      }
+
+      function removeOffscreenFeathers() {
+        feathers = feathers.filter((feather) => (
+          feather.y < height + feather.height * 1.4 &&
+          feather.x > -width * 0.28 &&
+          feather.x < width * 1.28
+        ));
+      }
+
+      function maybeSpawnFeather(now) {
+        if (switchSpawnSourcesAt && now >= switchSpawnSourcesAt) {
+          currentSpawnSources = [...pendingSpawnSources];
+          switchSpawnSourcesAt = 0;
+          pendingSpawnSources = [];
+        }
+
+        if (!currentSpawnSources.length) {
+          return;
+        }
+
+        if (now - lastSpawnTime >= 650 && feathers.length < 200) {
+          feathers.push(createFeather(true));
+          lastSpawnTime = now;
+        }
+      }
+
+      function syncFeathersToActiveSources() {
+        pendingSpawnSources = getActiveFeatherSources();
+        switchSpawnSourcesAt = performance.now() + spawnSwitchDelayMs;
+        lastSpawnTime = 0;
+      }
+
+      function animate(now) {
+        if (!lastFrameTime) {
+          lastFrameTime = now;
+        }
+
+        const deltaSeconds = Math.min((now - lastFrameTime) / 1000, 0.05);
+        lastFrameTime = now;
+
+        context.clearRect(0, 0, width, height);
+        maybeSpawnFeather(now);
+
+        feathers.forEach((feather) => {
+          updateFeather(feather, deltaSeconds);
+          drawFeather(feather);
+        });
+
+        removeOffscreenFeathers();
+        animationFrameId = window.requestAnimationFrame(animate);
+      }
+
+      function loadImages() {
+        return Promise.all(
+          Object.values(featherSourceMap).map((src) => new Promise((resolve) => {
+            const image = new Image();
+            image.decoding = "async";
+            image.onload = () => {
+              image.dataset.source = src;
+              resolve({ src, image });
+            };
+            image.onerror = () => resolve(null);
+            image.src = src;
+          }))
+        ).then((results) => results.filter(Boolean));
+      }
+
+      function handleResize() {
+        if (window.innerWidth < 900) {
+          if (animationFrameId) {
+            window.cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+          }
+          context.clearRect(0, 0, width, height);
+          return;
+        }
+
+        parseSize();
+      }
+
+      parseSize();
+
+      loadImages().then((images) => {
+        if (!images.length) return;
+        images.forEach(({ src, image }) => featherImages.set(src, image));
+        currentSpawnSources = getActiveFeatherSources();
+        feathers = Array.from({ length: 110 }, () => createFeather(false));
+        animationFrameId = window.requestAnimationFrame(animate);
+      });
+
+      window.addEventListener("resize", handleResize);
+      const handleFilterChange = () => {
+        syncFeathersToActiveSources();
+      };
+      togglesHost?.addEventListener("change", handleFilterChange);
+      togglesHost?.addEventListener("yfned:filters-changed", handleFilterChange);
+      reducedMotionQuery.addEventListener("change", (event) => {
+        if (event.matches && animationFrameId) {
+          window.cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+          context.clearRect(0, 0, width, height);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
