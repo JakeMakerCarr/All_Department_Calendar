@@ -70,7 +70,7 @@ body[data-app-mode="landing"] {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  background: url("../Assets/YFNED_staffHUB_background.png") center center / cover no-repeat;
+  background: url("/Assets/YFNED_staffHUB_background.png") center center / cover no-repeat;
 }
 
 .landing-map {
