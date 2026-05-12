@@ -354,6 +354,68 @@ body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
   color: #fff;
 }
 
+.asset-button {
+  width: 114px;
+  height: 51px;
+  min-width: 114px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+  text-indent: -9999px;
+  transition: transform 0.18s ease, filter 0.18s ease, opacity 0.18s ease;
+}
+
+.page-switch-link.asset-button {
+  padding: 0;
+}
+
+.asset-button:hover,
+.asset-button:focus-visible {
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  transform: translateY(-1px);
+  filter: drop-shadow(0 8px 14px rgba(0, 58, 112, 0.18));
+}
+
+.asset-button:focus-visible {
+  outline: 3px solid rgba(255, 227, 109, 0.92);
+  outline-offset: 4px;
+}
+
+.asset-button:disabled {
+  opacity: 0.68;
+  transform: none;
+  filter: none;
+}
+
+.back-to-staff-button {
+  background-image: url("../Assets/BackToStaffHubButton_Regular.png");
+}
+
+.back-to-staff-button:hover,
+.back-to-staff-button:focus-visible {
+  background-image: url("../Assets/BackToStaffHubButton_Hovered.png");
+}
+
+.signout-button {
+  background-image: url("../Assets/SignOutButton_Regular.png");
+}
+
+.signout-button:hover,
+.signout-button:focus-visible {
+  background-image: url("../Assets/SignOutButton_Hovered.png");
+}
+
 .hero-text {
   width: min(58ch, 100%);
   margin: 0;
