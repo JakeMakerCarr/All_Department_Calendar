@@ -426,6 +426,7 @@ const eventDescriptionEl = document.getElementById("event-description");
 const eventLocationEl = document.getElementById("event-location");
 const eventForWhatEventEl = document.getElementById("event-for-what-event");
 const eventIntegrateCalendarEl = document.getElementById("event-integrate-calendar");
+const calendarIntegrationFieldsEl = document.getElementById("calendar-integration-fields");
 const travelIntegrationFieldsEl = document.getElementById("travel-integration-fields");
 const eventTravelerNameEl = document.getElementById("event-traveler-name");
 const eventTravelLocationEl = document.getElementById("event-travel-location");
@@ -613,15 +614,23 @@ function requestSafetyPin() {
   });
 }
 
-function syncTravelIntegrationFields(clearWhenHidden = false) {
-  if (!travelIntegrationFieldsEl) {
+function syncCalendarIntegrationFields(clearWhenHidden = false) {
+  if (!calendarIntegrationFieldsEl && !travelIntegrationFieldsEl) {
     return;
   }
 
   const isIntegrated = Boolean(eventIntegrateCalendarEl?.checked);
-  travelIntegrationFieldsEl.hidden = !isIntegrated;
+  if (calendarIntegrationFieldsEl) {
+    calendarIntegrationFieldsEl.hidden = !isIntegrated;
+  }
+  if (travelIntegrationFieldsEl) {
+    travelIntegrationFieldsEl.hidden = !isIntegrated;
+  }
 
   if (!isIntegrated && clearWhenHidden) {
+    if (eventForWhatEventEl) {
+      eventForWhatEventEl.value = "";
+    }
     if (eventTravelerNameEl) {
       eventTravelerNameEl.value = "";
     }
@@ -1219,7 +1228,7 @@ async function handleEventSubmit(submitEvent) {
   eventFormEl.reset();
   departmentSelectEl.value = department;
   populateSubDepartmentOptions();
-  syncTravelIntegrationFields();
+  syncCalendarIntegrationFields();
   if (savedRecords.length === 1 && !recurrenceWeekdays.length) {
     setStatus(`${APP_CONFIG.firebaseSave}${mirrorSummary}`, "success");
     return;
@@ -1416,9 +1425,9 @@ function startCalendarApp() {
   });
 
   eventIntegrateCalendarEl?.addEventListener("change", () => {
-    syncTravelIntegrationFields(true);
+    syncCalendarIntegrationFields(true);
   });
-  syncTravelIntegrationFields();
+  syncCalendarIntegrationFields();
 
   eventFormEl.addEventListener("submit", (event) => {
     handleEventSubmit(event).catch(() => {

@@ -785,6 +785,7 @@ body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
   width: auto;
 }
 
+.calendar-integration-fields,
 .travel-integration-fields {
   display: grid;
   gap: 12px;
