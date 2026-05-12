@@ -67,14 +67,16 @@
               Travel Location
               <input id="event-location" type="text" maxlength="160" required>
             </label>
-            <label>
-              For What Event
-              <input id="event-for-what-event" type="text" maxlength="160">
-            </label>
             <label class="event-inline-check">
               <input id="event-integrate-calendar" type="checkbox">
-              <span>Integrate on other Calendar</span>
+              <span>Integrate on the All Department Calendar</span>
             </label>
+            <div class="calendar-integration-fields" id="calendar-integration-fields" hidden>
+              <label>
+                For What Event
+                <input id="event-for-what-event" type="text" maxlength="160">
+              </label>
+            </div>
             <label>
               Start Date
               <input id="event-start" type="date" required>

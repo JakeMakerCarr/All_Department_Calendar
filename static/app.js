@@ -1134,12 +1134,12 @@ async function handleEventSubmit(submitEvent) {
   }
 
   if (APP_MODE === "travel" && integrateOnOtherCalendar && !forWhatEvent) {
-    setStatus('Please enter "For What Event" before integrating this travel declaration on the other calendar.', "warning");
+    setStatus('Please enter "For What Event" before integrating this travel declaration on the All Department Calendar.', "warning");
     return;
   }
 
   if (APP_MODE === "calendar" && integrateOnOtherCalendar && (!travelerName || !travelLocation)) {
-    setStatus('Please complete both "Who is traveling?" and "Travel Location" before integrating this event on the other calendar.', "warning");
+    setStatus('Please complete both "Who is traveling?" and "Travel Location" before integrating this event on the Travel Calendar.', "warning");
     return;
   }
 
