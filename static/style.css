@@ -44,6 +44,27 @@ body[data-app-mode="landing"] {
   background: #5cb0dc;
 }
 
+body[data-auth-page="protected"][data-auth-state="checking"] .page-shell,
+body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
+  visibility: hidden;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .feather-canvas {
   position: fixed;
   inset: 0;
@@ -66,6 +87,113 @@ body[data-app-mode="landing"] {
   padding: 0;
 }
 
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #2f99cc;
+}
+
+.login-container {
+  width: min(310px, 100%);
+  padding: 30px 32px 38px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.login-logo {
+  display: block;
+  width: min(220px, 100%);
+  height: auto;
+  margin: 0 auto 22px;
+}
+
+.login-form {
+  display: grid;
+  gap: 10px;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #8a8f99;
+  border-radius: 0;
+  background: #e8eef8;
+  color: #1f2734;
+  font: inherit;
+}
+
+.login-form input:focus {
+  outline: 2px solid rgba(0, 58, 112, 0.28);
+  outline-offset: 1px;
+}
+
+.login-actions {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.login-actions button,
+.auth-signout-button {
+  border: 1px solid #8a8f99;
+  border-radius: 2px;
+  background: #f5f5f5;
+  color: #111;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+  transition: background-color 0.16s ease, transform 0.16s ease;
+}
+
+.login-actions button {
+  padding: 8px 16px;
+}
+
+.login-actions button:hover,
+.auth-signout-button:hover {
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.login-actions button:disabled,
+.auth-signout-button:disabled {
+  cursor: progress;
+  opacity: 0.68;
+  transform: none;
+}
+
+.login-status {
+  min-height: 1.1em;
+  margin: 8px 0 0;
+  color: var(--midnight);
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.login-status:empty {
+  display: none;
+}
+
+.login-status[data-tone="success"] {
+  color: #146d61;
+}
+
+.login-status[data-tone="warning"] {
+  color: #785b00;
+}
+
+.login-status[data-tone="error"] {
+  color: var(--strawberry);
+}
+
 .landing-hero {
   position: relative;
   min-height: 100vh;
@@ -76,6 +204,14 @@ body[data-app-mode="landing"] {
 .landing-map {
   position: relative;
   min-height: 100vh;
+}
+
+.landing-signout-button {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  padding: 9px 14px;
 }
 
 .landing-node {
@@ -198,6 +334,18 @@ body[data-app-mode="landing"] {
   font-weight: 700;
   text-decoration: none;
   transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.page-switch-link.auth-signout-button {
+  margin-top: 16px;
+  padding: 10px 16px;
 }
 
 .page-switch-link:hover {

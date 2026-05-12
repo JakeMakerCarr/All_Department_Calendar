@@ -6,9 +6,31 @@
   <title>YFNED Staff Hub</title>
   <link rel="stylesheet" href="static/style.css">
 </head>
-<body data-app-mode="landing">
-  <main class="landing-shell">
+<body data-app-mode="landing" data-auth-page="login" data-auth-state="checking">
+  <main id="login-view" class="login-page" aria-labelledby="login-title">
+    <section class="login-container">
+      <h1 id="login-title" class="visually-hidden">YFNED Staff Hub Login</h1>
+      <img class="login-logo" src="Assets/YFNED_logo.png" alt="YFNED logo">
+      <form id="login-form" class="login-form">
+        <label class="visually-hidden" for="login-email">Username</label>
+        <input id="login-email" name="email" type="email" autocomplete="username" placeholder="Username" required>
+
+        <label class="visually-hidden" for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Password" required>
+
+        <div class="login-actions">
+          <button id="login-submit" type="submit">Login</button>
+          <button id="forgot-password" type="button">Forgot Password?</button>
+        </div>
+
+        <p id="login-status" class="login-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+
+  <main id="app-view" class="landing-shell" hidden>
     <section class="landing-hero" aria-label="YFNED staff hub navigation">
+      <button type="button" class="auth-signout-button landing-signout-button" data-auth-action="sign-out">Sign Out</button>
       <div class="landing-map">
         <a class="landing-node landing-node-travel" href="travel.html" aria-label="Open the travel calendar">
           <img src="Assets/TravelCalendarLogo.png" alt="YFNED travel calendar logo">
@@ -24,5 +46,7 @@
       </div>
     </section>
   </main>
+  <script src="static/firebase-config.js"></script>
+  <script type="module" src="static/auth.js"></script>
 </body>
 </html>

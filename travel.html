@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/main.min.css">
   <link rel="stylesheet" href="static/style.css">
 </head>
-<body data-app-mode="travel">
+<body data-app-mode="travel" data-auth-page="protected" data-auth-state="checking">
   <canvas id="feather-canvas" class="feather-canvas" aria-hidden="true"></canvas>
   <div class="page-shell">
     <header class="hero">
@@ -19,7 +19,10 @@
         <div class="hero-copy">
           <p class="eyebrow">Yukon First Nation Education Directorate</p>
           <h1 id="calendar-title">YFNED TRAVEL CALENDAR</h1>
-          <a class="page-switch-link" href="https://www.yfnedstaffhub.ca">Back To Staff HUB</a>
+          <div class="hero-links">
+            <a class="page-switch-link" href="https://www.yfnedstaffhub.ca">Back To Staff HUB</a>
+            <button type="button" class="page-switch-link auth-signout-button" data-auth-action="sign-out">Sign Out</button>
+          </div>
         </div>
       </div>
       <div class="hero-bottom">
@@ -107,6 +110,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
   <script src="static/firebase-config.js"></script>
+  <script type="module" src="static/auth.js"></script>
   <script type="module" src="static/app.js"></script>
   <script>
     (function () {

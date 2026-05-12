@@ -1,4 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getApp,
+  getApps,
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getDatabase,
   onValue,
@@ -395,6 +399,8 @@ let selectedDayCell = null;
 let allEvents = [];
 let db = null;
 let firebaseReady = false;
+let calendar = null;
+let appStarted = false;
 
 const titleEl = document.getElementById("calendar-title");
 const chipsEl = document.getElementById("active-chips");
@@ -1038,7 +1044,7 @@ function connectFirebase() {
     return;
   }
 
-  const app = initializeApp(window.YFNED_FIREBASE_CONFIG);
+  const app = getApps().length ? getApp() : initializeApp(window.YFNED_FIREBASE_CONFIG);
   db = getDatabase(app);
   firebaseReady = true;
   setStatus(APP_CONFIG.firebaseLoading, "success");
@@ -1072,167 +1078,184 @@ function connectFirebase() {
   });
 }
 
-createToggleMarkup();
-populateDepartmentOptions();
-populateSubDepartmentOptions();
-
-togglesHost.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-action-role]");
-  if (!button) return;
-
-  const actionRole = button.dataset.actionRole;
-
-  if (actionRole === "all") {
-    if (selectedDepartments.size === DEPARTMENTS.length) {
-      selectedDepartments = new Set();
-    } else {
-      selectedDepartments = new Set(DEPARTMENTS.map((department) => department.name));
-      Object.entries(SUB_DEPARTMENTS).forEach(([department, subDepartments]) => {
-        selectedSubDepartments.set(department, new Set(subDepartments));
-      });
-    }
-    activeNavDepartment = null;
-    refreshCalendar();
+function startCalendarApp() {
+  if (appStarted) {
     return;
   }
+  appStarted = true;
 
-  if (actionRole === "department") {
-    const departmentName = button.dataset.department;
-    if (!departmentName) return;
-    const hasSubDepartments = (SUB_DEPARTMENTS[departmentName] || []).length > 0;
-    const allDepartmentsActive = selectedDepartments.size === DEPARTMENTS.length;
+  createToggleMarkup();
+  populateDepartmentOptions();
+  populateSubDepartmentOptions();
 
-    if (departmentName === "Corporate Services") {
+  togglesHost.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action-role]");
+    if (!button) return;
+
+    const actionRole = button.dataset.actionRole;
+
+    if (actionRole === "all") {
+      if (selectedDepartments.size === DEPARTMENTS.length) {
+        selectedDepartments = new Set();
+      } else {
+        selectedDepartments = new Set(DEPARTMENTS.map((department) => department.name));
+        Object.entries(SUB_DEPARTMENTS).forEach(([department, subDepartments]) => {
+          selectedSubDepartments.set(department, new Set(subDepartments));
+        });
+      }
+      activeNavDepartment = null;
+      refreshCalendar();
+      return;
+    }
+
+    if (actionRole === "department") {
+      const departmentName = button.dataset.department;
+      if (!departmentName) return;
+      const hasSubDepartments = (SUB_DEPARTMENTS[departmentName] || []).length > 0;
+      const allDepartmentsActive = selectedDepartments.size === DEPARTMENTS.length;
+
+      if (departmentName === "Corporate Services") {
+        if (allDepartmentsActive) {
+          selectedDepartments = new Set([departmentName]);
+          selectedSubDepartments.set(departmentName, new Set(SUB_DEPARTMENTS[departmentName] || []));
+          activeNavDepartment = departmentName;
+          refreshCalendar();
+          return;
+        }
+        if (activeNavDepartment === departmentName) {
+          selectedDepartments.delete(departmentName);
+          activeNavDepartment = null;
+          selectedSubDepartments.set(departmentName, new Set(SUB_DEPARTMENTS[departmentName] || []));
+          refreshCalendar();
+          return;
+        }
+        selectedDepartments.add(departmentName);
+        selectedSubDepartments.set(departmentName, new Set(SUB_DEPARTMENTS[departmentName] || []));
+        activeNavDepartment = departmentName;
+        refreshCalendar();
+        return;
+      }
+
       if (allDepartmentsActive) {
         selectedDepartments = new Set([departmentName]);
-        selectedSubDepartments.set(departmentName, new Set(SUB_DEPARTMENTS[departmentName] || []));
+        if (hasSubDepartments) {
+          selectedSubDepartments.set(departmentName, new Set(SUB_DEPARTMENTS[departmentName]));
+          activeNavDepartment = departmentName;
+        } else {
+          activeNavDepartment = null;
+        }
+        refreshCalendar();
+        return;
+      }
+
+      if (hasSubDepartments && selectedDepartments.has(departmentName) && activeNavDepartment !== departmentName) {
         activeNavDepartment = departmentName;
         refreshCalendar();
         return;
       }
-      if (activeNavDepartment === departmentName) {
+
+      if (selectedDepartments.has(departmentName)) {
         selectedDepartments.delete(departmentName);
-        activeNavDepartment = null;
-        selectedSubDepartments.set(departmentName, new Set(SUB_DEPARTMENTS[departmentName] || []));
+        if (activeNavDepartment === departmentName) {
+          activeNavDepartment = null;
+        }
+      } else {
+        selectedDepartments.add(departmentName);
+        if (hasSubDepartments) {
+          selectedSubDepartments.set(departmentName, new Set(SUB_DEPARTMENTS[departmentName]));
+          activeNavDepartment = departmentName;
+        }
+      }
+
+      if (hasSubDepartments && selectedDepartments.has(departmentName)) {
+        activeNavDepartment = departmentName;
+      }
+
+      refreshCalendar();
+      return;
+    }
+
+    if (actionRole === "subdepartment") {
+      const departmentName = button.dataset.department;
+      const subDepartment = button.dataset.subdepartment;
+      if (!departmentName || !subDepartment) return;
+
+      if (selectedDepartments.size === DEPARTMENTS.length) {
+        selectedDepartments = new Set([departmentName]);
+      }
+
+      if (departmentName === "Corporate Services" && activeNavDepartment !== departmentName) {
+        selectedDepartments.add(departmentName);
+        selectedSubDepartments.set(departmentName, new Set([subDepartment]));
+        activeNavDepartment = departmentName;
         refreshCalendar();
         return;
       }
-      selectedDepartments.add(departmentName);
-      selectedSubDepartments.set(departmentName, new Set(SUB_DEPARTMENTS[departmentName] || []));
-      activeNavDepartment = departmentName;
-      refreshCalendar();
-      return;
-    }
 
-    if (allDepartmentsActive) {
-      selectedDepartments = new Set([departmentName]);
-      if (hasSubDepartments) {
-        selectedSubDepartments.set(departmentName, new Set(SUB_DEPARTMENTS[departmentName]));
-        activeNavDepartment = departmentName;
+      const selectedSet = selectedSubDepartments.get(departmentName) || new Set();
+      if (selectedSet.has(subDepartment)) {
+        selectedSet.delete(subDepartment);
       } else {
-        activeNavDepartment = null;
+        selectedSet.add(subDepartment);
       }
-      refreshCalendar();
-      return;
-    }
-
-    if (hasSubDepartments && selectedDepartments.has(departmentName) && activeNavDepartment !== departmentName) {
+      selectedSubDepartments.set(departmentName, selectedSet);
       activeNavDepartment = departmentName;
       refreshCalendar();
-      return;
     }
-
-    if (selectedDepartments.has(departmentName)) {
-      selectedDepartments.delete(departmentName);
-      if (activeNavDepartment === departmentName) {
-        activeNavDepartment = null;
-      }
-    } else {
-      selectedDepartments.add(departmentName);
-      if (hasSubDepartments) {
-        selectedSubDepartments.set(departmentName, new Set(SUB_DEPARTMENTS[departmentName]));
-        activeNavDepartment = departmentName;
-      }
-    }
-
-    if (hasSubDepartments && selectedDepartments.has(departmentName)) {
-      activeNavDepartment = departmentName;
-    }
-
-    refreshCalendar();
-    return;
-  }
-
-  if (actionRole === "subdepartment") {
-    const departmentName = button.dataset.department;
-    const subDepartment = button.dataset.subdepartment;
-    if (!departmentName || !subDepartment) return;
-
-    if (selectedDepartments.size === DEPARTMENTS.length) {
-      selectedDepartments = new Set([departmentName]);
-    }
-
-    if (departmentName === "Corporate Services" && activeNavDepartment !== departmentName) {
-      selectedDepartments.add(departmentName);
-      selectedSubDepartments.set(departmentName, new Set([subDepartment]));
-      activeNavDepartment = departmentName;
-      refreshCalendar();
-      return;
-    }
-
-    const selectedSet = selectedSubDepartments.get(departmentName) || new Set();
-    if (selectedSet.has(subDepartment)) {
-      selectedSet.delete(subDepartment);
-    } else {
-      selectedSet.add(subDepartment);
-    }
-    selectedSubDepartments.set(departmentName, selectedSet);
-    activeNavDepartment = departmentName;
-    refreshCalendar();
-  }
-});
-
-departmentSelectEl.addEventListener("change", () => {
-  populateSubDepartmentOptions();
-});
-
-eventFormEl.addEventListener("submit", (event) => {
-  handleEventSubmit(event).catch(() => {
-    setStatus("Could not save the event to Firebase. Check your configuration and database rules.", "error");
   });
-});
 
-if (APP_MODE !== "calendar" && eventSeriesFieldsetEl) {
-  eventSeriesFieldsetEl.hidden = true;
+  departmentSelectEl.addEventListener("change", () => {
+    populateSubDepartmentOptions();
+  });
+
+  eventFormEl.addEventListener("submit", (event) => {
+    handleEventSubmit(event).catch(() => {
+      setStatus("Could not save the event to Firebase. Check your configuration and database rules.", "error");
+    });
+  });
+
+  if (APP_MODE !== "calendar" && eventSeriesFieldsetEl) {
+    eventSeriesFieldsetEl.hidden = true;
+  }
+
+  calendar = new FullCalendar.Calendar(document.getElementById("calendar"), {
+    initialView: "dayGridMonth",
+    initialDate: "2026-04-01",
+    height: "auto",
+    fixedWeekCount: false,
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: ""
+    },
+    events: [],
+    displayEventTime: false,
+    eventDisplay: "block",
+    dateClick(info) {
+      activeDate = info.date;
+      if (selectedDayCell) {
+        selectedDayCell.classList.remove("fc-day-selected");
+      }
+      info.dayEl.classList.add("fc-day-selected");
+      selectedDayCell = info.dayEl;
+      renderSelectedDay(info.date);
+    }
+  });
+
+  calendar.render();
+  updateViewCopy();
+
+  activeDate = new Date("2026-04-22T00:00:00");
+  renderSelectedDay(activeDate);
+  connectFirebase();
 }
 
-const calendar = new FullCalendar.Calendar(document.getElementById("calendar"), {
-  initialView: "dayGridMonth",
-  initialDate: "2026-04-01",
-  height: "auto",
-  fixedWeekCount: false,
-  headerToolbar: {
-    left: "prev,next today",
-    center: "title",
-    right: ""
-  },
-  events: [],
-  displayEventTime: false,
-  eventDisplay: "block",
-  dateClick(info) {
-    activeDate = info.date;
-    if (selectedDayCell) {
-      selectedDayCell.classList.remove("fc-day-selected");
-    }
-    info.dayEl.classList.add("fc-day-selected");
-    selectedDayCell = info.dayEl;
-    renderSelectedDay(info.date);
+if (document.body.dataset.authPage === "protected") {
+  if (window.YFNED_AUTH_USER) {
+    startCalendarApp();
+  } else {
+    window.addEventListener("yfned:auth-ready", startCalendarApp, { once: true });
   }
-});
-
-calendar.render();
-updateViewCopy();
-
-activeDate = new Date("2026-04-22T00:00:00");
-renderSelectedDay(activeDate);
-connectFirebase();
+} else {
+  startCalendarApp();
+}
