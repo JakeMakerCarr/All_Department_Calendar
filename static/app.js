@@ -24,6 +24,9 @@ const DEPARTMENTS = [
 const CALENDAR_EVENTS_PATH = "calendarEvents";
 const TRAVEL_DECLARATIONS_PATH = "travelDeclarations";
 
+// Set this to the 4-number Safety PIN YFNED staff should use for saves and deletes.
+const SAFETY_PIN = "6962";
+
 const APP_MODE = document.body.dataset.appMode || "calendar";
 const APP_CONFIG = APP_MODE === "travel"
   ? {
@@ -404,6 +407,8 @@ let db = null;
 let firebaseReady = false;
 let calendar = null;
 let appStarted = false;
+let safetyPinDialogEl = null;
+let pendingSafetyPinResolve = null;
 
 const titleEl = document.getElementById("calendar-title");
 const chipsEl = document.getElementById("active-chips");
@@ -519,6 +524,92 @@ function isFirebaseConfigured() {
 function setStatus(message, tone = "info") {
   dataStatusEl.textContent = message;
   dataStatusEl.dataset.tone = tone;
+}
+
+function resolveSafetyPinDialog(isApproved) {
+  if (!pendingSafetyPinResolve) {
+    return;
+  }
+
+  const resolve = pendingSafetyPinResolve;
+  pendingSafetyPinResolve = null;
+  resolve(isApproved);
+}
+
+function createSafetyPinDialog() {
+  if (safetyPinDialogEl) {
+    return safetyPinDialogEl;
+  }
+
+  safetyPinDialogEl = document.createElement("dialog");
+  safetyPinDialogEl.className = "safety-pin-dialog";
+  safetyPinDialogEl.innerHTML = `
+    <form class="safety-pin-form">
+      <h2>What is the Safety PIN?</h2>
+      <input
+        class="safety-pin-input"
+        type="password"
+        inputmode="numeric"
+        autocomplete="off"
+        maxlength="4"
+        pattern="[0-9]{4}"
+        aria-label="Safety PIN"
+      >
+      <p class="safety-pin-error" role="alert" aria-live="polite"></p>
+      <button type="submit" class="primary-action">Submit</button>
+    </form>
+  `;
+  document.body.appendChild(safetyPinDialogEl);
+
+  const form = safetyPinDialogEl.querySelector(".safety-pin-form");
+  const input = safetyPinDialogEl.querySelector(".safety-pin-input");
+  const error = safetyPinDialogEl.querySelector(".safety-pin-error");
+
+  input.addEventListener("input", () => {
+    input.value = input.value.replace(/\D/g, "").slice(0, 4);
+    error.textContent = "";
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    if (input.value === SAFETY_PIN) {
+      safetyPinDialogEl.close();
+      resolveSafetyPinDialog(true);
+      return;
+    }
+
+    error.textContent = "Contact YFNED IT Team for PIN";
+    input.focus();
+    input.select();
+  });
+
+  safetyPinDialogEl.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    safetyPinDialogEl.close();
+    resolveSafetyPinDialog(false);
+  });
+
+  return safetyPinDialogEl;
+}
+
+function requestSafetyPin() {
+  const dialog = createSafetyPinDialog();
+  const input = dialog.querySelector(".safety-pin-input");
+  const error = dialog.querySelector(".safety-pin-error");
+
+  if (dialog.open) {
+    return Promise.resolve(false);
+  }
+
+  input.value = "";
+  error.textContent = "";
+
+  return new Promise((resolve) => {
+    pendingSafetyPinResolve = resolve;
+    dialog.showModal();
+    input.focus();
+  });
 }
 
 function populateDepartmentOptions() {
@@ -915,6 +1006,11 @@ function formatDateRange(event) {
 }
 
 async function deleteEvent(eventId) {
+  const pinApproved = await requestSafetyPin();
+  if (!pinApproved) {
+    return;
+  }
+
   if (!firebaseReady || !db) {
     setStatus(APP_CONFIG.firebaseMissing, "warning");
     return;
@@ -980,6 +1076,11 @@ function refreshCalendar() {
 
 async function handleEventSubmit(submitEvent) {
   submitEvent.preventDefault();
+
+  const pinApproved = await requestSafetyPin();
+  if (!pinApproved) {
+    return;
+  }
 
   if (!firebaseReady || !db) {
     setStatus("Firebase is not configured yet. Update static/firebase-config.js first.", "warning");
