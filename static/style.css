@@ -785,19 +785,9 @@ body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
   width: auto;
 }
 
-.travel-integration-fieldset {
+.travel-integration-fields {
   display: grid;
   gap: 12px;
-  margin: 0;
-  padding: 14px 14px 16px;
-  border: 1px solid rgba(0, 58, 112, 0.18);
-  background: rgba(255, 255, 255, 0.74);
-}
-
-.travel-integration-fieldset legend {
-  padding: 0 6px;
-  color: var(--midnight);
-  font-size: 0.96rem;
 }
 
 .event-series-fieldset {

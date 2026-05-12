@@ -426,6 +426,7 @@ const eventDescriptionEl = document.getElementById("event-description");
 const eventLocationEl = document.getElementById("event-location");
 const eventForWhatEventEl = document.getElementById("event-for-what-event");
 const eventIntegrateCalendarEl = document.getElementById("event-integrate-calendar");
+const travelIntegrationFieldsEl = document.getElementById("travel-integration-fields");
 const eventTravelerNameEl = document.getElementById("event-traveler-name");
 const eventTravelLocationEl = document.getElementById("event-travel-location");
 const eventSeriesFieldsetEl = document.getElementById("event-series-fieldset");
@@ -610,6 +611,24 @@ function requestSafetyPin() {
     dialog.showModal();
     input.focus();
   });
+}
+
+function syncTravelIntegrationFields(clearWhenHidden = false) {
+  if (!travelIntegrationFieldsEl) {
+    return;
+  }
+
+  const isIntegrated = Boolean(eventIntegrateCalendarEl?.checked);
+  travelIntegrationFieldsEl.hidden = !isIntegrated;
+
+  if (!isIntegrated && clearWhenHidden) {
+    if (eventTravelerNameEl) {
+      eventTravelerNameEl.value = "";
+    }
+    if (eventTravelLocationEl) {
+      eventTravelLocationEl.value = "";
+    }
+  }
 }
 
 function populateDepartmentOptions() {
@@ -1110,8 +1129,8 @@ async function handleEventSubmit(submitEvent) {
     return;
   }
 
-  if (APP_MODE === "calendar" && (travelerName || travelLocation) && (!travelerName || !travelLocation)) {
-    setStatus('Please complete both "Who is travelling?" and "Travel Location?" or leave both blank.', "warning");
+  if (APP_MODE === "calendar" && integrateOnOtherCalendar && (!travelerName || !travelLocation)) {
+    setStatus('Please complete both "Who is traveling?" and "Travel Location" before integrating this event on the other calendar.', "warning");
     return;
   }
 
@@ -1161,7 +1180,7 @@ async function handleEventSubmit(submitEvent) {
     );
   }
 
-  if (APP_MODE === "calendar" && travelerName && travelLocation) {
+  if (APP_MODE === "calendar" && integrateOnOtherCalendar) {
     const mirroredRecords = await saveEventRecords(
       spans.map((span) => ({
         department,
@@ -1200,6 +1219,7 @@ async function handleEventSubmit(submitEvent) {
   eventFormEl.reset();
   departmentSelectEl.value = department;
   populateSubDepartmentOptions();
+  syncTravelIntegrationFields();
   if (savedRecords.length === 1 && !recurrenceWeekdays.length) {
     setStatus(`${APP_CONFIG.firebaseSave}${mirrorSummary}`, "success");
     return;
@@ -1394,6 +1414,11 @@ function startCalendarApp() {
   departmentSelectEl.addEventListener("change", () => {
     populateSubDepartmentOptions();
   });
+
+  eventIntegrateCalendarEl?.addEventListener("change", () => {
+    syncTravelIntegrationFields(true);
+  });
+  syncTravelIntegrationFields();
 
   eventFormEl.addEventListener("submit", (event) => {
     handleEventSubmit(event).catch(() => {
