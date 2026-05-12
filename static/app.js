@@ -21,10 +21,13 @@ const DEPARTMENTS = [
   { name: "Nutrition", color: "#e6544e" }
 ];
 
+const CALENDAR_EVENTS_PATH = "calendarEvents";
+const TRAVEL_DECLARATIONS_PATH = "travelDeclarations";
+
 const APP_MODE = document.body.dataset.appMode || "calendar";
 const APP_CONFIG = APP_MODE === "travel"
   ? {
-      dbPath: "travelDeclarations",
+      dbPath: TRAVEL_DECLARATIONS_PATH,
       entityLabel: "travel declaration",
       allTitle: "YFNED ALL DEPARTMENTS TRAVEL CALENDAR",
       singleTitle: (departmentName) => `${departmentName} TRAVEL CALENDAR`,
@@ -43,7 +46,7 @@ const APP_CONFIG = APP_MODE === "travel"
       formMissing: "Please complete every travel field before saving."
     }
   : {
-      dbPath: "calendarEvents",
+      dbPath: CALENDAR_EVENTS_PATH,
       entityLabel: "event",
       allTitle: "YFNED ALL DEPARTMENTS CALENDAR",
       singleTitle: (departmentName) => `${departmentName} CALENDAR`,
@@ -416,6 +419,10 @@ const eventStartEl = document.getElementById("event-start");
 const eventEndEl = document.getElementById("event-end");
 const eventDescriptionEl = document.getElementById("event-description");
 const eventLocationEl = document.getElementById("event-location");
+const eventForWhatEventEl = document.getElementById("event-for-what-event");
+const eventIntegrateCalendarEl = document.getElementById("event-integrate-calendar");
+const eventTravelerNameEl = document.getElementById("event-traveler-name");
+const eventTravelLocationEl = document.getElementById("event-travel-location");
 const eventSeriesFieldsetEl = document.getElementById("event-series-fieldset");
 const weekdayPickerEl = document.getElementById("weekday-picker");
 const dataStatusEl = document.getElementById("data-status");
@@ -816,8 +823,8 @@ function normalizeDate(dateLike) {
   return date;
 }
 
-async function saveEventRecords(records) {
-  const eventsRef = ref(db, APP_CONFIG.dbPath);
+async function saveEventRecords(records, dbPath = APP_CONFIG.dbPath) {
+  const eventsRef = ref(db, dbPath);
   const seriesId = records.length > 1 || records[0].recurrenceWeekdays?.length
     ? push(eventsRef).key
     : "";
@@ -854,6 +861,28 @@ async function saveEventRecords(records) {
   }));
 
   return savedRecords;
+}
+
+function buildCalendarDescriptionFromTravel(travelerName, travelNotes) {
+  return [
+    `Travel declared by ${travelerName}.`,
+    travelNotes
+  ].filter(Boolean).join(" ");
+}
+
+function buildTravelDescriptionFromEvent(eventTitle, eventDescription) {
+  return [
+    `Traveling for ${eventTitle}.`,
+    eventDescription
+  ].filter(Boolean).join(" ");
+}
+
+function formatMirrorSaveSummary(records, singularLabel, pluralLabel) {
+  if (!records.length) {
+    return "";
+  }
+
+  return ` Also added ${records.length} ${records.length === 1 ? singularLabel : pluralLabel}.`;
 }
 
 function formatLongDate(dateLike) {
@@ -964,10 +993,24 @@ async function handleEventSubmit(submitEvent) {
   const start = eventStartEl.value;
   const end = eventEndEl.value;
   const description = eventDescriptionEl.value.trim();
+  const forWhatEvent = eventForWhatEventEl?.value.trim() || "";
+  const integrateOnOtherCalendar = Boolean(eventIntegrateCalendarEl?.checked);
+  const travelerName = eventTravelerNameEl?.value.trim() || "";
+  const travelLocation = eventTravelLocationEl?.value.trim() || "";
   const recurrenceWeekdays = APP_MODE === "calendar" ? getSelectedWeekdays() : [];
 
   if (!department || !title || !start || !end || !description || (APP_MODE === "travel" && !location)) {
     setStatus(APP_CONFIG.formMissing, "warning");
+    return;
+  }
+
+  if (APP_MODE === "travel" && integrateOnOtherCalendar && !forWhatEvent) {
+    setStatus('Please enter "For What Event" before integrating this travel declaration on the other calendar.', "warning");
+    return;
+  }
+
+  if (APP_MODE === "calendar" && (travelerName || travelLocation) && (!travelerName || !travelLocation)) {
+    setStatus('Please complete both "Who is travelling?" and "Travel Location?" or leave both blank.', "warning");
     return;
   }
 
@@ -994,6 +1037,49 @@ async function handleEventSubmit(submitEvent) {
       recurrenceWeekdays
     }))
   );
+  let mirrorSummary = "";
+
+  if (APP_MODE === "travel" && integrateOnOtherCalendar) {
+    const mirroredRecords = await saveEventRecords(
+      spans.map((span) => ({
+        department,
+        subDepartment,
+        title: forWhatEvent,
+        location,
+        start: span.start,
+        end: span.end,
+        description: buildCalendarDescriptionFromTravel(title, description),
+        recurrenceWeekdays: []
+      })),
+      CALENDAR_EVENTS_PATH
+    );
+    mirrorSummary = formatMirrorSaveSummary(
+      mirroredRecords,
+      "event to the All Department Calendar",
+      "events to the All Department Calendar"
+    );
+  }
+
+  if (APP_MODE === "calendar" && travelerName && travelLocation) {
+    const mirroredRecords = await saveEventRecords(
+      spans.map((span) => ({
+        department,
+        subDepartment,
+        title: travelerName,
+        location: travelLocation,
+        start: span.start,
+        end: span.end,
+        description: buildTravelDescriptionFromEvent(title, description),
+        recurrenceWeekdays
+      })),
+      TRAVEL_DECLARATIONS_PATH
+    );
+    mirrorSummary = formatMirrorSaveSummary(
+      mirroredRecords,
+      "travel declaration to the Travel Calendar",
+      "travel declarations to the Travel Calendar"
+    );
+  }
 
   selectedDepartments.add(department);
   if (subDepartment) {
@@ -1014,7 +1100,7 @@ async function handleEventSubmit(submitEvent) {
   departmentSelectEl.value = department;
   populateSubDepartmentOptions();
   if (savedRecords.length === 1 && !recurrenceWeekdays.length) {
-    setStatus(APP_CONFIG.firebaseSave, "success");
+    setStatus(`${APP_CONFIG.firebaseSave}${mirrorSummary}`, "success");
     return;
   }
 
@@ -1022,7 +1108,7 @@ async function handleEventSubmit(submitEvent) {
     ? ` for ${formatWeekdayList(recurrenceWeekdays)}`
     : "";
   setStatus(
-    `Saved ${savedRecords.length} linked ${APP_CONFIG.entityLabel}${savedRecords.length === 1 ? "" : "s"}${weekdaySummary} to Firebase Realtime Database.`,
+    `Saved ${savedRecords.length} linked ${APP_CONFIG.entityLabel}${savedRecords.length === 1 ? "" : "s"}${weekdaySummary} to Firebase Realtime Database.${mirrorSummary}`,
     "success"
   );
 }
@@ -1218,9 +1304,11 @@ function startCalendarApp() {
     eventSeriesFieldsetEl.hidden = true;
   }
 
+  const todayValue = formatDateInputValue(new Date());
+
   calendar = new FullCalendar.Calendar(document.getElementById("calendar"), {
     initialView: "dayGridMonth",
-    initialDate: "2026-04-01",
+    initialDate: todayValue,
     height: "auto",
     fixedWeekCount: false,
     headerToolbar: {
@@ -1245,7 +1333,7 @@ function startCalendarApp() {
   calendar.render();
   updateViewCopy();
 
-  activeDate = new Date("2026-04-22T00:00:00");
+  activeDate = parseLocalDate(todayValue);
   renderSelectedDay(activeDate);
   connectFirebase();
 }

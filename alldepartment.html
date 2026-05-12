@@ -111,6 +111,17 @@
               Description
               <textarea id="event-description" rows="4" maxlength="400" required></textarea>
             </label>
+            <fieldset class="travel-integration-fieldset">
+              <legend>Is anyone traveling for this event?</legend>
+              <label>
+                Who is travelling?
+                <input id="event-traveler-name" type="text" maxlength="120">
+              </label>
+              <label>
+                Travel Location?
+                <input id="event-travel-location" type="text" maxlength="160">
+              </label>
+            </fieldset>
             <button type="submit" class="primary-action">Save Event</button>
           </form>
           <p id="data-status" class="data-status">Checking Firebase configuration.</p>

@@ -280,7 +280,7 @@ body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
 }
 
 .hero-logo-wrap {
-  flex: 0 0 150px;
+  flex: 0 0 164px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -290,7 +290,7 @@ body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
 
 .hero-logo {
   display: block;
-  width: 150px;
+  width: 164px;
   height: auto;
 }
 
@@ -767,6 +767,35 @@ body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
 .event-form label {
   display: grid;
   gap: 6px;
+  color: var(--midnight);
+  font-size: 0.96rem;
+}
+
+.event-form .event-inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: 100%;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.event-form .event-inline-check input {
+  width: auto;
+}
+
+.travel-integration-fieldset {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 14px 16px;
+  border: 1px solid rgba(0, 58, 112, 0.18);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.travel-integration-fieldset legend {
+  padding: 0 6px;
   color: var(--midnight);
   font-size: 0.96rem;
 }
