@@ -786,6 +786,22 @@ body[data-auth-page="protected"][data-auth-state="checking"] .page-shell {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.event-time-select {
+  cursor: pointer;
+}
+
+.event-time-select:required:invalid {
+  color: rgba(0, 58, 112, 0.55);
+}
+
+.event-time-select option {
+  color: var(--ink);
+}
+
+.event-time-select option[value=""] {
+  color: rgba(0, 58, 112, 0.55);
+}
+
 .event-other-location-field {
   margin-left: 18px;
   padding-left: 14px;

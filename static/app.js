@@ -23,6 +23,7 @@ const DEPARTMENTS = [
 
 const CALENDAR_EVENTS_PATH = "calendarEvents";
 const TRAVEL_DECLARATIONS_PATH = "travelDeclarations";
+const TIME_OPTION_STEP_MINUTES = 15;
 
 // Set this to the 4-number Safety PIN YFNED staff should use for saves and deletes.
 const SAFETY_PIN = "6962";
@@ -675,6 +676,12 @@ function syncEventTimeFields(clearWhenHidden = false) {
 
   const includeTimes = Boolean(eventIncludeTimesEl.checked);
   eventTimeFieldsEl.hidden = !includeTimes;
+  if (eventStartTimeEl) {
+    eventStartTimeEl.required = includeTimes;
+  }
+  if (eventEndTimeEl) {
+    eventEndTimeEl.required = includeTimes;
+  }
 
   if (!includeTimes && clearWhenHidden) {
     if (eventStartTimeEl) {
@@ -683,6 +690,35 @@ function syncEventTimeFields(clearWhenHidden = false) {
     if (eventEndTimeEl) {
       eventEndTimeEl.value = "";
     }
+  }
+}
+
+function formatTimeOptionValue(totalMinutes) {
+  const hours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+  const minutes = String(totalMinutes % 60).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+function formatTimeOptionLabel(value) {
+  const [hourPart, minutePart] = value.split(":");
+  const date = new Date();
+  date.setHours(Number(hourPart), Number(minutePart), 0, 0);
+
+  return date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
+function populateTimeSelect(select, placeholder) {
+  if (!select || select.options.length > 0) {
+    return;
+  }
+
+  select.appendChild(new Option(placeholder, ""));
+  for (let minutes = 0; minutes < 24 * 60; minutes += TIME_OPTION_STEP_MINUTES) {
+    const value = formatTimeOptionValue(minutes);
+    select.appendChild(new Option(formatTimeOptionLabel(value), value));
   }
 }
 
@@ -1650,6 +1686,8 @@ function startCalendarApp() {
   eventIncludeTimesEl?.addEventListener("change", () => {
     syncEventTimeFields(true);
   });
+  populateTimeSelect(eventStartTimeEl, "Select start time");
+  populateTimeSelect(eventEndTimeEl, "Select end time");
   [
     eventStartEl,
     eventEndEl,
