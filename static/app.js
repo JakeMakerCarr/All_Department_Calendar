@@ -46,7 +46,7 @@ const APP_CONFIG = APP_MODE === "travel"
       firebaseDelete: "Travel declaration removed from Firebase Realtime Database.",
       firebaseSave: "Travel declaration saved to Firebase Realtime Database.",
       firebaseMissing: "Firebase is not configured yet, so there is no stored travel declaration to remove.",
-      formMissing: "Please complete every travel field before saving."
+      formMissing: "Please complete every required travel field before saving."
     }
   : {
       dbPath: CALENDAR_EVENTS_PATH,
@@ -97,6 +97,12 @@ const SUB_DEPARTMENTS = {
     "Rural"
   ]
 };
+const DARK_EVENT_TEXT_DEPARTMENTS = new Set([
+  "Corporate Services",
+  "Early Years",
+  "Education Analysts"
+]);
+const DARK_EVENT_TEXT_COLOR = "#1e528dff";
 
 const FLOWER_NAV_CONFIG = {
   all: {
@@ -423,7 +429,13 @@ const eventTitleEl = document.getElementById("event-title");
 const eventStartEl = document.getElementById("event-start");
 const eventEndEl = document.getElementById("event-end");
 const eventDescriptionEl = document.getElementById("event-description");
+const eventIncludeTimesEl = document.getElementById("event-include-times");
+const eventTimeFieldsEl = document.getElementById("event-time-fields");
+const eventStartTimeEl = document.getElementById("event-start-time");
+const eventEndTimeEl = document.getElementById("event-end-time");
 const eventLocationEl = document.getElementById("event-location");
+const eventOtherLocationFieldEl = document.getElementById("event-other-location-field");
+const eventOtherLocationEl = document.getElementById("event-other-location");
 const eventForWhatEventEl = document.getElementById("event-for-what-event");
 const eventIntegrateCalendarEl = document.getElementById("event-integrate-calendar");
 const calendarIntegrationFieldsEl = document.getElementById("calendar-integration-fields");
@@ -436,6 +448,7 @@ const dataStatusEl = document.getElementById("data-status");
 const weekdayCheckboxEls = Array.from(
   weekdayPickerEl?.querySelectorAll('input[type="checkbox"]') || []
 );
+const LOCATION_DROPDOWN_VISIBLE_OPTIONS = 6;
 
 function parseLocalDate(dateString) {
   const [year, month, day] = dateString.split("-").map(Number);
@@ -452,6 +465,12 @@ function formatDateInputValue(date) {
 function addDays(date, days) {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
+  return result;
+}
+
+function addMonths(date, months) {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
   return result;
 }
 
@@ -475,7 +494,7 @@ function buildEventSpans(start, end, weekdayNumbers) {
     return [{ start, end }];
   }
 
-  const rangeEnd = parseLocalDate(end);
+  const rangeEnd = addDays(addMonths(parseLocalDate(start), 6), -1);
   const selectedWeekdays = new Set(weekdayNumbers);
   const matchingDates = [];
 
@@ -626,6 +645,15 @@ function syncCalendarIntegrationFields(clearWhenHidden = false) {
   if (travelIntegrationFieldsEl) {
     travelIntegrationFieldsEl.hidden = !isIntegrated;
   }
+  if (eventForWhatEventEl) {
+    eventForWhatEventEl.required = APP_MODE === "travel" && isIntegrated;
+  }
+  if (eventTravelerNameEl) {
+    eventTravelerNameEl.required = APP_MODE === "calendar" && isIntegrated;
+  }
+  if (eventTravelLocationEl) {
+    eventTravelLocationEl.required = APP_MODE === "calendar" && isIntegrated;
+  }
 
   if (!isIntegrated && clearWhenHidden) {
     if (eventForWhatEventEl) {
@@ -638,6 +666,91 @@ function syncCalendarIntegrationFields(clearWhenHidden = false) {
       eventTravelLocationEl.value = "";
     }
   }
+}
+
+function syncEventTimeFields(clearWhenHidden = false) {
+  if (!eventIncludeTimesEl || !eventTimeFieldsEl) {
+    return;
+  }
+
+  const includeTimes = Boolean(eventIncludeTimesEl.checked);
+  eventTimeFieldsEl.hidden = !includeTimes;
+
+  if (!includeTimes && clearWhenHidden) {
+    if (eventStartTimeEl) {
+      eventStartTimeEl.value = "";
+    }
+    if (eventEndTimeEl) {
+      eventEndTimeEl.value = "";
+    }
+  }
+}
+
+function syncOtherLocationField(clearWhenHidden = false) {
+  if (!eventLocationEl || !eventOtherLocationFieldEl || !eventOtherLocationEl) {
+    return;
+  }
+
+  const isOtherLocation = eventLocationEl.value === "Other";
+  eventOtherLocationFieldEl.hidden = !isOtherLocation;
+  eventOtherLocationEl.required = isOtherLocation;
+
+  if (!isOtherLocation && clearWhenHidden) {
+    eventOtherLocationEl.value = "";
+  }
+}
+
+function showInputPicker(input) {
+  if (typeof input?.showPicker !== "function") {
+    return;
+  }
+
+  try {
+    input.showPicker();
+  } catch {
+    // Some browsers only allow showPicker during direct pointer activation.
+  }
+}
+
+function enableWholeFieldPicker(input) {
+  if (!input) {
+    return;
+  }
+
+  input.addEventListener("pointerdown", (event) => {
+    if (typeof input.showPicker !== "function") {
+      return;
+    }
+
+    event.preventDefault();
+    input.focus({ preventScroll: true });
+    showInputPicker(input);
+  });
+
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      showInputPicker(input);
+    }
+  });
+}
+
+function expandLocationDropdown() {
+  if (!eventLocationEl || APP_MODE !== "travel") {
+    return;
+  }
+
+  eventLocationEl.size = LOCATION_DROPDOWN_VISIBLE_OPTIONS;
+  eventLocationEl.classList.add("is-expanded");
+}
+
+function collapseLocationDropdown() {
+  if (!eventLocationEl || APP_MODE !== "travel") {
+    return;
+  }
+
+  eventLocationEl.removeAttribute("size");
+  eventLocationEl.classList.remove("is-expanded");
 }
 
 function populateDepartmentOptions() {
@@ -653,10 +766,12 @@ function populateSubDepartmentOptions() {
   if (!subDepartments.length) {
     subDepartmentSelectEl.innerHTML = '<option value="">No sub-department</option>';
     subDepartmentSelectEl.disabled = true;
+    subDepartmentSelectEl.required = false;
     return;
   }
 
   subDepartmentSelectEl.disabled = false;
+  subDepartmentSelectEl.required = false;
   subDepartmentSelectEl.innerHTML = [
     '<option value="">General department</option>',
     ...subDepartments.map((subDepartment) => `<option value="${subDepartment}">${subDepartment}</option>`)
@@ -818,7 +933,7 @@ function normalizeStoredEvents(rawEvents) {
       originalTitle: event.title,
       backgroundColor: department?.color || "#355c7d",
       borderColor: department?.color || "#355c7d",
-      textColor: "#ffffff",
+      textColor: DARK_EVENT_TEXT_DEPARTMENTS.has(event.department) ? DARK_EVENT_TEXT_COLOR : "#ffffff",
       endExclusive: formatDateInputValue(adjustedEnd)
     };
   });
@@ -838,10 +953,35 @@ function getFilteredEvents() {
 
       return selectedSubDepartments.get(event.department)?.has(event.subDepartment);
     })
-  ).map((event) => ({
-    ...event,
-    end: event.endExclusive
+  );
+}
+
+function getCalendarEventDateSpans(event) {
+  if (!event.recurrenceWeekdays?.length || event.occurrenceCount !== 1) {
+    return [{
+      start: event.start,
+      end: event.endExclusive
+    }];
+  }
+
+  return buildEventSpans(event.start, event.end, event.recurrenceWeekdays).map((span) => ({
+    start: span.start,
+    end: formatDateInputValue(addDays(parseLocalDate(span.end), 1))
   }));
+}
+
+function getCalendarEvents() {
+  return getFilteredEvents().flatMap((event) =>
+    getCalendarEventDateSpans(event).map((span, index) => ({
+      id: `${event.id || event.title}-${index}`,
+      title: event.title,
+      start: span.start,
+      end: span.end,
+      backgroundColor: event.backgroundColor,
+      borderColor: event.borderColor,
+      textColor: event.textColor
+    }))
+  );
 }
 
 function formatSelectedSummary() {
@@ -957,6 +1097,8 @@ async function saveEventRecords(records, dbPath = APP_CONFIG.dbPath) {
       location: record.location,
       start: record.start,
       end: record.end,
+      startTime: record.startTime || "",
+      endTime: record.endTime || "",
       description: record.description,
       createdAt: new Date().toISOString()
     };
@@ -1016,6 +1158,14 @@ function formatLongDate(dateLike) {
 function eventSpansDate(event, date) {
   const start = normalizeDate(parseLocalDate(event.start));
   const endExclusive = normalizeDate(parseLocalDate(event.endExclusive));
+
+  if (event.recurrenceWeekdays?.length) {
+    const endInclusive = normalizeDate(parseLocalDate(event.end));
+    return date >= start &&
+      date <= endInclusive &&
+      event.recurrenceWeekdays.includes(date.getDay());
+  }
+
   return date >= start && date < endExclusive;
 }
 
@@ -1031,6 +1181,32 @@ function formatDateRange(event) {
   const startLabel = formatter.format(start);
   const endLabel = formatter.format(endInclusive);
   return startLabel === endLabel ? startLabel : `${startLabel} to ${endLabel}`;
+}
+
+function formatTimeLabel(timeValue) {
+  if (!timeValue) {
+    return "";
+  }
+
+  const [hourPart, minutePart] = timeValue.split(":");
+  const date = new Date();
+  date.setHours(Number(hourPart), Number(minutePart), 0, 0);
+
+  return new Intl.DateTimeFormat("en-CA", {
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function formatEventTimeRange(event) {
+  const startTime = formatTimeLabel(event.startTime);
+  const endTime = formatTimeLabel(event.endTime);
+
+  if (startTime && endTime) {
+    return `${startTime} to ${endTime}`;
+  }
+
+  return startTime;
 }
 
 async function deleteEvent(eventId) {
@@ -1075,8 +1251,10 @@ function renderSelectedDay(dateLike) {
     const eventCard = document.createElement("article");
     eventCard.className = "day-event-card";
     eventCard.style.background = `linear-gradient(135deg, ${department?.color || "#355c7d"}, ${(department?.color || "#355c7d")}dd)`;
+    const timeRange = formatEventTimeRange(event);
     eventCard.innerHTML = `
       <h3>${event.originalTitle || event.title}</h3>
+      ${timeRange ? `<p class="day-event-time">${timeRange}</p>` : ""}
       <p><strong>${event.department}</strong></p>
       ${event.subDepartment ? `<p>${event.subDepartment}</p>` : ""}
       ${event.location ? `<p><strong>Location:</strong> ${event.location}</p>` : ""}
@@ -1097,7 +1275,7 @@ function renderSelectedDay(dateLike) {
 
 function refreshCalendar() {
   calendar.removeAllEvents();
-  calendar.addEventSource(getFilteredEvents());
+  calendar.addEventSource(getCalendarEvents());
   updateViewCopy();
   renderSelectedDay(activeDate);
 }
@@ -1118,9 +1296,13 @@ async function handleEventSubmit(submitEvent) {
   const department = departmentSelectEl.value;
   const subDepartment = subDepartmentSelectEl?.value.trim() || "";
   const title = eventTitleEl.value.trim();
-  const location = eventLocationEl?.value.trim() || "";
+  const selectedLocation = eventLocationEl?.value.trim() || "";
+  const otherLocation = eventOtherLocationEl?.value.trim() || "";
+  const location = selectedLocation === "Other" ? otherLocation : selectedLocation;
   const start = eventStartEl.value;
   const end = eventEndEl.value;
+  const startTime = eventStartTimeEl?.value || "";
+  const endTime = eventEndTimeEl?.value || "";
   const description = eventDescriptionEl.value.trim();
   const forWhatEvent = eventForWhatEventEl?.value.trim() || "";
   const integrateOnOtherCalendar = Boolean(eventIntegrateCalendarEl?.checked);
@@ -1128,7 +1310,14 @@ async function handleEventSubmit(submitEvent) {
   const travelLocation = eventTravelLocationEl?.value.trim() || "";
   const recurrenceWeekdays = APP_MODE === "calendar" ? getSelectedWeekdays() : [];
 
-  if (!department || !title || !start || !end || !description || (APP_MODE === "travel" && !location)) {
+  if (
+    !department ||
+    !title ||
+    !start ||
+    !end ||
+    (APP_MODE === "calendar" && !description) ||
+    (APP_MODE === "travel" && (!selectedLocation || !location))
+  ) {
     setStatus(APP_CONFIG.formMissing, "warning");
     return;
   }
@@ -1143,6 +1332,11 @@ async function handleEventSubmit(submitEvent) {
     return;
   }
 
+  if (APP_MODE === "calendar" && endTime && !startTime) {
+    setStatus("Please choose a Start Time before adding an End Time.", "warning");
+    return;
+  }
+
   if (parseLocalDate(end) < parseLocalDate(start)) {
     setStatus("End date cannot be earlier than start date.", "warning");
     return;
@@ -1150,7 +1344,7 @@ async function handleEventSubmit(submitEvent) {
 
   const spans = buildEventSpans(start, end, recurrenceWeekdays);
   if (!spans.length) {
-    setStatus(`No ${APP_CONFIG.entityLabel}s matched the selected weekdays inside that date range.`, "warning");
+    setStatus(`No ${APP_CONFIG.entityLabel}s matched the selected weekdays in the next six months.`, "warning");
     return;
   }
 
@@ -1162,6 +1356,8 @@ async function handleEventSubmit(submitEvent) {
       location,
       start: span.start,
       end: span.end,
+      startTime,
+      endTime,
       description,
       recurrenceWeekdays
     }))
@@ -1198,6 +1394,8 @@ async function handleEventSubmit(submitEvent) {
         location: travelLocation,
         start: span.start,
         end: span.end,
+        startTime,
+        endTime,
         description: buildTravelDescriptionFromEvent(title, description),
         recurrenceWeekdays
       })),
@@ -1228,7 +1426,9 @@ async function handleEventSubmit(submitEvent) {
   eventFormEl.reset();
   departmentSelectEl.value = department;
   populateSubDepartmentOptions();
+  syncEventTimeFields(true);
   syncCalendarIntegrationFields();
+  syncOtherLocationField();
   if (savedRecords.length === 1 && !recurrenceWeekdays.length) {
     setStatus(`${APP_CONFIG.firebaseSave}${mirrorSummary}`, "success");
     return;
@@ -1282,6 +1482,8 @@ function connectFirebase() {
         location: event.location || "",
         start: event.start,
         end: event.end,
+        startTime: event.startTime || "",
+        endTime: event.endTime || "",
         description: event.description || "",
         seriesId: event.seriesId || "",
         occurrenceIndex: event.occurrenceIndex ?? null,
@@ -1424,10 +1626,39 @@ function startCalendarApp() {
     populateSubDepartmentOptions();
   });
 
+  eventLocationEl?.addEventListener("change", () => {
+    syncOtherLocationField(true);
+    collapseLocationDropdown();
+  });
+  eventLocationEl?.addEventListener("focus", expandLocationDropdown);
+  eventLocationEl?.addEventListener("pointerdown", expandLocationDropdown);
+  eventLocationEl?.addEventListener("blur", collapseLocationDropdown);
+  eventLocationEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      collapseLocationDropdown();
+      return;
+    }
+
+    if (event.key === "Enter" && eventLocationEl.classList.contains("is-expanded")) {
+      collapseLocationDropdown();
+    }
+  });
+
   eventIntegrateCalendarEl?.addEventListener("change", () => {
     syncCalendarIntegrationFields(true);
   });
+  eventIncludeTimesEl?.addEventListener("change", () => {
+    syncEventTimeFields(true);
+  });
+  [
+    eventStartEl,
+    eventEndEl,
+    eventStartTimeEl,
+    eventEndTimeEl
+  ].forEach(enableWholeFieldPicker);
+  syncEventTimeFields();
   syncCalendarIntegrationFields();
+  syncOtherLocationField();
 
   eventFormEl.addEventListener("submit", (event) => {
     handleEventSubmit(event).catch(() => {

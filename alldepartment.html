@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="static/style.css">
 </head>
 <body data-auth-page="protected" data-auth-state="checking">
-  <canvas id="feather-canvas" class="feather-canvas" aria-hidden="true"></canvas>
   <div class="page-shell">
     <header class="hero">
       <div class="hero-top">
@@ -74,7 +73,7 @@
             <fieldset class="event-series-fieldset" id="event-series-fieldset">
               <legend>Repeat On Specific Weekdays</legend>
               <p class="event-series-help">
-                Optional: choose weekdays inside the start and end range. Matching dates will be saved as one linked series, and consecutive dates will be merged into one event span.
+                Optional: choose weekdays to repeat for the next six months. Consecutive selected weekdays will be saved as one linked event span.
               </p>
               <div class="weekday-picker" id="weekday-picker">
                 <label class="weekday-chip">
@@ -111,6 +110,20 @@
               Description
               <textarea id="event-description" rows="4" maxlength="400" required></textarea>
             </label>
+            <label class="event-inline-check">
+              <input id="event-include-times" type="checkbox">
+              <span>Include start time and end time?</span>
+            </label>
+            <div class="event-time-fields" id="event-time-fields" hidden>
+              <label>
+                Start Time
+                <input id="event-start-time" type="time">
+              </label>
+              <label>
+                End Time
+                <input id="event-end-time" type="time">
+              </label>
+            </div>
             <label class="event-inline-check">
               <input id="event-integrate-calendar" type="checkbox">
               <span>Integrate on Travel Calendar</span>
@@ -158,244 +171,5 @@
   <script src="static/firebase-config.js"></script>
   <script type="module" src="static/auth.js"></script>
   <script type="module" src="static/app.js"></script>
-  <script>
-    (function () {
-      const canvas = document.getElementById("feather-canvas");
-      if (!canvas) return;
-
-      const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-      if (reducedMotionQuery.matches || window.innerWidth < 900) {
-        return;
-      }
-
-      const featherSourceMap = {
-        all: "Assets/Feather_AD.png",
-        "Corporate Services": "Assets/Feather_CS.png",
-        "Education Advocates": "Assets/Feather_EdAd.png",
-        "Education Analysts": "Assets/Feather_EdAn.png",
-        "Early Years": "Assets/Feather_EY.png",
-        "Mobile Therapeutic Unit": "Assets/Feather_MTU.png",
-        "Nutrition": "Assets/Feather_N.png"
-      };
-
-      const context = canvas.getContext("2d");
-      const featherImages = new Map();
-      const togglesHost = document.getElementById("department-toggles");
-      const spawnSwitchDelayMs = 4000;
-      let width = 0;
-      let height = 0;
-      let dpr = 1;
-      let animationFrameId = null;
-      let lastFrameTime = 0;
-      let lastSpawnTime = 0;
-      let feathers = [];
-      let currentSpawnSources = [];
-      let pendingSpawnSources = [];
-      let switchSpawnSourcesAt = 0;
-
-      function clamp(value, min, max) {
-        return Math.max(min, Math.min(max, value));
-      }
-
-      function randomBetween(min, max) {
-        return min + Math.random() * (max - min);
-      }
-
-      function pickRandom(items) {
-        return items[Math.floor(Math.random() * items.length)];
-      }
-
-      function parseSize() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        dpr = clamp(window.devicePixelRatio || 1, 1, 2);
-        canvas.width = Math.round(width * dpr);
-        canvas.height = Math.round(height * dpr);
-        context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      }
-
-      function getActiveFeatherSources() {
-        const allToggle = togglesHost?.querySelector('input[data-role="all"]');
-        if (allToggle?.checked) {
-          return [featherSourceMap.all];
-        }
-
-        const departmentSources = Array.from(
-          togglesHost?.querySelectorAll('input[data-role="department"]:checked') || []
-        )
-          .map((input) => featherSourceMap[input.dataset.department])
-          .filter(Boolean);
-
-        return departmentSources;
-      }
-
-      function getActiveFeatherImages() {
-        return currentSpawnSources
-          .map((source) => featherImages.get(source))
-          .filter(Boolean);
-      }
-
-      function createFeather(spawnAboveViewport) {
-        const activeImages = getActiveFeatherImages();
-        const imagePool = activeImages.length ? activeImages : Array.from(featherImages.values());
-        const image = pickRandom(imagePool);
-        const scale = randomBetween(0.26, 0.54);
-        const drawWidth = image.width * scale;
-        const drawHeight = image.height * scale;
-
-        return {
-          image,
-          x: randomBetween(-width * 0.08, width * 1.08),
-          y: spawnAboveViewport
-            ? randomBetween(-height * 0.35, -drawHeight - 18)
-            : randomBetween(-height * 0.1, height * 1.02),
-          width: drawWidth,
-          height: drawHeight,
-          source: image.dataset.source || "",
-          fallSpeed: randomBetween(12, 26),
-          drift: randomBetween(-7, 7),
-          swayAmplitude: randomBetween(8, 26),
-          swayFrequency: randomBetween(0.35, 1.05),
-          swayPhase: randomBetween(0, Math.PI * 2),
-          rotation: randomBetween(-1.2, 1.2),
-          rotationSpeed: randomBetween(-0.12, 0.12),
-          wobbleAmplitude: randomBetween(0.015, 0.05)
-        };
-      }
-
-      function drawFeather(feather) {
-        context.save();
-        context.globalAlpha = 1;
-
-        const sway = Math.sin(feather.swayPhase) * feather.swayAmplitude;
-        const wobble = Math.sin(feather.swayPhase * 0.8) * feather.wobbleAmplitude;
-        const drawX = feather.x + sway;
-        const drawY = feather.y;
-        const centerX = drawX + feather.width / 2;
-        const centerY = drawY + feather.height / 2;
-
-        context.translate(centerX, centerY);
-        context.rotate(feather.rotation + wobble);
-        context.drawImage(
-          feather.image,
-          -feather.width / 2,
-          -feather.height / 2,
-          feather.width,
-          feather.height
-        );
-        context.restore();
-      }
-
-      function updateFeather(feather, deltaSeconds) {
-        feather.y += feather.fallSpeed * deltaSeconds;
-        feather.x += feather.drift * deltaSeconds;
-        feather.swayPhase += feather.swayFrequency * deltaSeconds;
-        feather.rotation += feather.rotationSpeed * deltaSeconds;
-      }
-
-      function removeOffscreenFeathers() {
-        feathers = feathers.filter((feather) => (
-          feather.y < height + feather.height * 1.4 &&
-          feather.x > -width * 0.28 &&
-          feather.x < width * 1.28
-        ));
-      }
-
-      function maybeSpawnFeather(now) {
-        if (switchSpawnSourcesAt && now >= switchSpawnSourcesAt) {
-          currentSpawnSources = [...pendingSpawnSources];
-          switchSpawnSourcesAt = 0;
-          pendingSpawnSources = [];
-        }
-
-        if (!currentSpawnSources.length) {
-          return;
-        }
-
-        if (now - lastSpawnTime >= 650 && feathers.length < 200) {
-          feathers.push(createFeather(true));
-          lastSpawnTime = now;
-        }
-      }
-
-      function syncFeathersToActiveSources() {
-        pendingSpawnSources = getActiveFeatherSources();
-        switchSpawnSourcesAt = performance.now() + spawnSwitchDelayMs;
-        lastSpawnTime = 0;
-      }
-
-      function animate(now) {
-        if (!lastFrameTime) {
-          lastFrameTime = now;
-        }
-
-        const deltaSeconds = Math.min((now - lastFrameTime) / 1000, 0.05);
-        lastFrameTime = now;
-
-        context.clearRect(0, 0, width, height);
-        maybeSpawnFeather(now);
-
-        feathers.forEach((feather) => {
-          updateFeather(feather, deltaSeconds);
-          drawFeather(feather);
-        });
-
-        removeOffscreenFeathers();
-        animationFrameId = window.requestAnimationFrame(animate);
-      }
-
-      function loadImages() {
-        return Promise.all(
-          Object.values(featherSourceMap).map((src) => new Promise((resolve) => {
-            const image = new Image();
-            image.decoding = "async";
-            image.onload = () => {
-              image.dataset.source = src;
-              resolve({ src, image });
-            };
-            image.onerror = () => resolve(null);
-            image.src = src;
-          }))
-        ).then((results) => results.filter(Boolean));
-      }
-
-      function handleResize() {
-        if (window.innerWidth < 900) {
-          if (animationFrameId) {
-            window.cancelAnimationFrame(animationFrameId);
-            animationFrameId = null;
-          }
-          context.clearRect(0, 0, width, height);
-          return;
-        }
-
-        parseSize();
-      }
-
-      parseSize();
-
-      loadImages().then((images) => {
-        if (!images.length) return;
-        images.forEach(({ src, image }) => featherImages.set(src, image));
-        currentSpawnSources = getActiveFeatherSources();
-        feathers = Array.from({ length: 110 }, () => createFeather(false));
-        animationFrameId = window.requestAnimationFrame(animate);
-      });
-
-      window.addEventListener("resize", handleResize);
-      const handleFilterChange = () => {
-        syncFeathersToActiveSources();
-      };
-      togglesHost?.addEventListener("change", handleFilterChange);
-      togglesHost?.addEventListener("yfned:filters-changed", handleFilterChange);
-      reducedMotionQuery.addEventListener("change", (event) => {
-        if (event.matches && animationFrameId) {
-          window.cancelAnimationFrame(animationFrameId);
-          animationFrameId = null;
-          context.clearRect(0, 0, width, height);
-        }
-      });
-    })();
-  </script>
 </body>
 </html>

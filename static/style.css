@@ -44,8 +44,7 @@ body[data-app-mode="landing"] {
   background: #5cb0dc;
 }
 
-body[data-auth-page="protected"][data-auth-state="checking"] .page-shell,
-body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
+body[data-auth-page="protected"][data-auth-state="checking"] .page-shell {
   visibility: hidden;
 }
 
@@ -63,15 +62,6 @@ body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-.feather-canvas {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
 }
 
 .page-shell {
@@ -786,9 +776,20 @@ body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
 }
 
 .calendar-integration-fields,
+.event-time-fields,
 .travel-integration-fields {
   display: grid;
   gap: 12px;
+}
+
+.event-time-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.event-other-location-field {
+  margin-left: 18px;
+  padding-left: 14px;
+  border-left: 3px solid rgba(0, 58, 112, 0.22);
 }
 
 .event-series-fieldset {
@@ -863,6 +864,11 @@ body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
   background: rgba(255, 255, 255, 0.95);
   color: var(--ink);
   font: inherit;
+}
+
+.event-form select[size],
+.event-location-select.is-expanded {
+  overflow-y: auto;
 }
 
 .primary-action,
@@ -1051,6 +1057,10 @@ body[data-auth-page="protected"][data-auth-state="checking"] .feather-canvas {
   font-weight: 600;
 }
 
+.day-event-time {
+  font-weight: 700;
+}
+
 .day-event-card p {
   margin: 6px 0;
 }
@@ -1199,6 +1209,10 @@ body[data-app-mode="travel"] .fc .fc-daygrid-event .fc-event-main {
     gap: 18px;
   }
 
+  .event-time-fields {
+    grid-template-columns: 1fr;
+  }
+
   .hero-top {
     flex-direction: column;
     align-items: flex-start;
@@ -1229,11 +1243,5 @@ body[data-app-mode="travel"] .fc .fc-daygrid-event .fc-event-main {
   .fc .fc-toolbar {
     flex-direction: column;
     gap: 12px;
-  }
-}
-
-@media (max-width: 899px), (prefers-reduced-motion: reduce) {
-  .feather-canvas {
-    display: none;
   }
 }
