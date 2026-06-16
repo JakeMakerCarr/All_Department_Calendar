@@ -450,6 +450,7 @@ const weekdayCheckboxEls = Array.from(
   weekdayPickerEl?.querySelectorAll('input[type="checkbox"]') || []
 );
 const LOCATION_DROPDOWN_VISIBLE_OPTIONS = 6;
+const TIME_DROPDOWN_VISIBLE_OPTIONS = 6;
 
 function parseLocalDate(dateString) {
   const [year, month, day] = dateString.split("-").map(Number);
@@ -787,6 +788,40 @@ function collapseLocationDropdown() {
 
   eventLocationEl.removeAttribute("size");
   eventLocationEl.classList.remove("is-expanded");
+}
+
+function expandTimeDropdown(select) {
+  if (!select) {
+    return;
+  }
+
+  select.size = TIME_DROPDOWN_VISIBLE_OPTIONS;
+  select.classList.add("is-expanded");
+}
+
+function collapseTimeDropdown(select) {
+  if (!select) {
+    return;
+  }
+
+  select.removeAttribute("size");
+  select.classList.remove("is-expanded");
+}
+
+function setupCompactTimeSelect(select) {
+  if (!select) {
+    return;
+  }
+
+  select.addEventListener("focus", () => expandTimeDropdown(select));
+  select.addEventListener("pointerdown", () => expandTimeDropdown(select));
+  select.addEventListener("change", () => collapseTimeDropdown(select));
+  select.addEventListener("blur", () => collapseTimeDropdown(select));
+  select.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" || event.key === "Enter") {
+      collapseTimeDropdown(select);
+    }
+  });
 }
 
 function populateDepartmentOptions() {
@@ -1690,10 +1725,12 @@ function startCalendarApp() {
   populateTimeSelect(eventEndTimeEl, "Select end time");
   [
     eventStartEl,
-    eventEndEl,
+    eventEndEl
+  ].forEach(enableWholeFieldPicker);
+  [
     eventStartTimeEl,
     eventEndTimeEl
-  ].forEach(enableWholeFieldPicker);
+  ].forEach(setupCompactTimeSelect);
   syncEventTimeFields();
   syncCalendarIntegrationFields();
   syncOtherLocationField();
