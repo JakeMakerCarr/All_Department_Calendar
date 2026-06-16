@@ -786,20 +786,86 @@ body[data-auth-page="protected"][data-auth-state="checking"] .page-shell {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.event-time-select {
-  cursor: pointer;
+.event-form .event-time-select-source {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.event-time-select:required:invalid {
-  color: rgba(0, 58, 112, 0.55);
+.time-picker {
+  position: relative;
 }
 
-.event-time-select option {
+.time-picker-button {
+  position: relative;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 38px 11px 12px;
+  border: 1px solid rgba(0, 58, 112, 0.18);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.95);
   color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
-.event-time-select option[value=""] {
+.time-picker-button::after {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid rgba(0, 58, 112, 0.68);
+  border-bottom: 2px solid rgba(0, 58, 112, 0.68);
+  content: "";
+  transform: translateY(-65%) rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.time-picker.is-open .time-picker-button::after {
+  transform: translateY(-35%) rotate(225deg);
+}
+
+.time-picker-button.is-placeholder {
   color: rgba(0, 58, 112, 0.55);
+}
+
+.time-picker-options {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: calc(40px * 6);
+  overflow-y: auto;
+  border: 1px solid rgba(0, 58, 112, 0.22);
+  background: #fff;
+  box-shadow: 0 14px 30px rgba(0, 58, 112, 0.18);
+}
+
+.time-picker-option {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 0;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.time-picker-option:hover,
+.time-picker-option:focus,
+.time-picker-option[aria-selected="true"] {
+  background: rgba(0, 58, 112, 0.1);
+  outline: none;
 }
 
 .event-other-location-field {

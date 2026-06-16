@@ -450,7 +450,7 @@ const weekdayCheckboxEls = Array.from(
   weekdayPickerEl?.querySelectorAll('input[type="checkbox"]') || []
 );
 const LOCATION_DROPDOWN_VISIBLE_OPTIONS = 6;
-const TIME_DROPDOWN_VISIBLE_OPTIONS = 6;
+const timePickerControls = new Map();
 
 function parseLocalDate(dateString) {
   const [year, month, day] = dateString.split("-").map(Number);
@@ -677,19 +677,15 @@ function syncEventTimeFields(clearWhenHidden = false) {
 
   const includeTimes = Boolean(eventIncludeTimesEl.checked);
   eventTimeFieldsEl.hidden = !includeTimes;
-  if (eventStartTimeEl) {
-    eventStartTimeEl.required = includeTimes;
-  }
-  if (eventEndTimeEl) {
-    eventEndTimeEl.required = includeTimes;
-  }
 
   if (!includeTimes && clearWhenHidden) {
     if (eventStartTimeEl) {
       eventStartTimeEl.value = "";
+      updateTimePickerLabel(eventStartTimeEl);
     }
     if (eventEndTimeEl) {
       eventEndTimeEl.value = "";
+      updateTimePickerLabel(eventEndTimeEl);
     }
   }
 }
@@ -721,6 +717,91 @@ function populateTimeSelect(select, placeholder) {
     const value = formatTimeOptionValue(minutes);
     select.appendChild(new Option(formatTimeOptionLabel(value), value));
   }
+}
+
+function updateTimePickerLabel(select) {
+  const controls = timePickerControls.get(select);
+  if (!controls) {
+    return;
+  }
+
+  const selectedOption = select.selectedOptions[0];
+  const hasValue = Boolean(select.value);
+  controls.button.textContent = hasValue && selectedOption
+    ? selectedOption.textContent
+    : controls.placeholder;
+  controls.button.classList.toggle("is-placeholder", !hasValue);
+
+  controls.options.forEach((optionButton) => {
+    optionButton.setAttribute("aria-selected", optionButton.dataset.value === select.value ? "true" : "false");
+  });
+}
+
+function closeTimePicker(select) {
+  const controls = timePickerControls.get(select);
+  if (!controls) {
+    return;
+  }
+
+  controls.wrapper.classList.remove("is-open");
+  controls.button.setAttribute("aria-expanded", "false");
+  controls.list.hidden = true;
+}
+
+function closeOtherTimePickers(activeSelect) {
+  timePickerControls.forEach((_, select) => {
+    if (select !== activeSelect) {
+      closeTimePicker(select);
+    }
+  });
+}
+
+function openTimePicker(select, focusSelected = false) {
+  const controls = timePickerControls.get(select);
+  if (!controls) {
+    return;
+  }
+
+  closeOtherTimePickers(select);
+  controls.wrapper.classList.add("is-open");
+  controls.button.setAttribute("aria-expanded", "true");
+  controls.list.hidden = false;
+
+  const selectedOption = controls.options.find((optionButton) => optionButton.dataset.value === select.value) ||
+    controls.options[0];
+  if (selectedOption) {
+    selectedOption.scrollIntoView({ block: "nearest" });
+    if (focusSelected) {
+      selectedOption.focus();
+    }
+  }
+}
+
+function chooseTimeOption(select, value) {
+  const controls = timePickerControls.get(select);
+  if (!controls) {
+    return;
+  }
+
+  select.value = value;
+  updateTimePickerLabel(select);
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+  closeTimePicker(select);
+  controls.button.focus();
+}
+
+function focusTimeOption(select, step) {
+  const controls = timePickerControls.get(select);
+  if (!controls) {
+    return;
+  }
+
+  const currentIndex = Math.max(0, controls.options.indexOf(document.activeElement));
+  const nextIndex = Math.min(
+    controls.options.length - 1,
+    Math.max(0, currentIndex + step)
+  );
+  controls.options[nextIndex]?.focus();
 }
 
 function syncOtherLocationField(clearWhenHidden = false) {
@@ -790,38 +871,94 @@ function collapseLocationDropdown() {
   eventLocationEl.classList.remove("is-expanded");
 }
 
-function expandTimeDropdown(select) {
-  if (!select) {
-    return;
-  }
-
-  select.size = TIME_DROPDOWN_VISIBLE_OPTIONS;
-  select.classList.add("is-expanded");
-}
-
-function collapseTimeDropdown(select) {
-  if (!select) {
-    return;
-  }
-
-  select.removeAttribute("size");
-  select.classList.remove("is-expanded");
-}
-
 function setupCompactTimeSelect(select) {
-  if (!select) {
+  if (!select || timePickerControls.has(select)) {
     return;
   }
 
-  select.addEventListener("focus", () => expandTimeDropdown(select));
-  select.addEventListener("pointerdown", () => expandTimeDropdown(select));
-  select.addEventListener("change", () => collapseTimeDropdown(select));
-  select.addEventListener("blur", () => collapseTimeDropdown(select));
-  select.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" || event.key === "Enter") {
-      collapseTimeDropdown(select);
+  const placeholder = select.options[0]?.textContent || "Select time";
+  const wrapper = document.createElement("div");
+  wrapper.className = "time-picker";
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "time-picker-button is-placeholder";
+  button.setAttribute("aria-haspopup", "listbox");
+  button.setAttribute("aria-expanded", "false");
+  button.setAttribute("aria-controls", `${select.id}-options`);
+
+  const list = document.createElement("div");
+  list.className = "time-picker-options";
+  list.id = `${select.id}-options`;
+  list.role = "listbox";
+  list.hidden = true;
+
+  const optionButtons = Array.from(select.options).map((option) => {
+    const optionButton = document.createElement("button");
+    optionButton.type = "button";
+    optionButton.className = "time-picker-option";
+    optionButton.dataset.value = option.value;
+    optionButton.textContent = option.textContent;
+    optionButton.role = "option";
+    optionButton.tabIndex = -1;
+    optionButton.addEventListener("click", () => chooseTimeOption(select, option.value));
+    list.appendChild(optionButton);
+    return optionButton;
+  });
+
+  wrapper.append(button, list);
+  select.classList.add("event-time-select-source");
+  select.tabIndex = -1;
+  select.setAttribute("aria-hidden", "true");
+  select.after(wrapper);
+
+  timePickerControls.set(select, {
+    button,
+    list,
+    options: optionButtons,
+    placeholder,
+    wrapper
+  });
+
+  button.addEventListener("click", () => {
+    if (wrapper.classList.contains("is-open")) {
+      closeTimePicker(select);
+    } else {
+      openTimePicker(select);
     }
   });
+  button.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openTimePicker(select, true);
+    }
+  });
+  list.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      focusTimeOption(select, 1);
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      focusTimeOption(select, -1);
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeTimePicker(select);
+      button.focus();
+    }
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      chooseTimeOption(select, document.activeElement.dataset.value || "");
+    }
+  });
+  document.addEventListener("pointerdown", (event) => {
+    if (!wrapper.contains(event.target)) {
+      closeTimePicker(select);
+    }
+  });
+  select.addEventListener("change", () => updateTimePickerLabel(select));
+  updateTimePickerLabel(select);
 }
 
 function populateDepartmentOptions() {
@@ -1400,6 +1537,11 @@ async function handleEventSubmit(submitEvent) {
 
   if (APP_MODE === "calendar" && integrateOnOtherCalendar && (!travelerName || !travelLocation)) {
     setStatus('Please complete both "Who is traveling?" and "Travel Location" before integrating this event on the Travel Calendar.', "warning");
+    return;
+  }
+
+  if (APP_MODE === "calendar" && eventIncludeTimesEl?.checked && (!startTime || !endTime)) {
+    setStatus("Please choose both a Start Time and End Time.", "warning");
     return;
   }
 
